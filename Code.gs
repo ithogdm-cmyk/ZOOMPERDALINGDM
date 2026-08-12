@@ -399,14 +399,23 @@ function getDashboardData() {
   
   const registrants = [];
   if (regLastRow >= 2) {
-    const regData = regSheet.getRange(2, 1, regLastRow - 1, regSheet.getLastColumn()).getValues();
-    for (let i = 0; i < regData.length; i++) {
-      const row = regData[i];
-      registrants.push({
-        email: String(row[regCols.emailCol - 1]).trim().toLowerCase(),
-        name: String(row[regCols.nameCol - 1]).trim(),
-        type: String(row[regCols.statusCol - 1] || "REGULER").trim()
-      });
+    const numRows = regLastRow - 1;
+    const emailData = regSheet.getRange(2, regCols.emailCol, numRows, 1).getValues();
+    const nameData = regSheet.getRange(2, regCols.nameCol, numRows, 1).getValues();
+    const statusData = regCols.statusCol !== -1 ? regSheet.getRange(2, regCols.statusCol, numRows, 1).getValues() : [];
+    
+    for (let i = 0; i < numRows; i++) {
+      const email = String(emailData[i][0]).trim().toLowerCase();
+      const name = String(nameData[i][0]).trim();
+      const statusType = statusData.length > 0 ? String(statusData[i][0] || "REGULER").trim() : "REGULER";
+      
+      if (email) {
+        registrants.push({
+          email: email,
+          name: name,
+          type: statusType
+        });
+      }
     }
   }
   
