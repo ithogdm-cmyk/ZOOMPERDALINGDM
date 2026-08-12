@@ -163,11 +163,29 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
   let instCol = -1;
   let statusCol = -1;
   
+  // Prioritas 1: Cari kolom khusus IDP atau ID Peserta terlebih dahulu
   for (let i = 0; i < headers.length; i++) {
     const header = String(headers[i]).toLowerCase().trim();
-    if (header === "id" || header === "no" || header === "no." || header === "nomor" || header === "idp" || header.includes("id peserta") || header.includes("id_peserta") || header.includes("registration")) {
+    if (header === "idp" || header === "id peserta" || header === "id_peserta" || header === "registration id") {
       idCol = i + 1;
-    } else if (header.includes("email")) {
+      break;
+    }
+  }
+  
+  // Prioritas 2: Jika tidak ada IDP, baru cari kolom ID generik atau No
+  if (idCol === -1) {
+    for (let i = 0; i < headers.length; i++) {
+      const header = String(headers[i]).toLowerCase().trim();
+      if (header === "id" || header === "no" || header === "no." || header === "nomor" || header.includes("registration")) {
+        idCol = i + 1;
+        break;
+      }
+    }
+  }
+  
+  for (let i = 0; i < headers.length; i++) {
+    const header = String(headers[i]).toLowerCase().trim();
+    if (header.includes("email")) {
       emailCol = i + 1;
     } else if (header.includes("nama") || header.includes("name") || header.includes("fullname") || header === "nama peserta" || header === "nama_peserta") {
       nameCol = i + 1;
@@ -524,7 +542,7 @@ function getDashboardData() {
   const attSheet = getAttendanceSheet(ss);
   const attLastRow = attSheet.getLastRow();
   
-  // Backfill otomatis ID di sheet Kehadiran yang masih kosong berdasarkan email matching dari RAW
+  // Sinkronisasi & Koreksi otomatis ID di sheet Kehadiran agar 100% cocok dengan ID dari RAW (misal: GDM001, PPI001)
   if (attLastRow >= 2) {
     const attRange = attSheet.getRange(2, 1, attLastRow - 1, 2); // Kolom 1 (ID), Kolom 2 (Email)
     const attValues = attRange.getValues();
@@ -534,9 +552,9 @@ function getDashboardData() {
       const attId = String(attValues[i][0]).trim();
       const attEmail = String(attValues[i][1]).trim().toLowerCase();
       
-      if (attId === "" || attId === "0" || attId === "0.0") {
+      if (attEmail) {
         const matchedReg = registrants.find(r => r.email === attEmail);
-        if (matchedReg) {
+        if (matchedReg && attId !== matchedReg.id) {
           attValues[i][0] = matchedReg.id;
           attNeedsUpdate = true;
         }
