@@ -59,6 +59,8 @@ function doPost(e) {
       } else {
         result = getDashboardData();
       }
+    } else if (action === "debugSheet") {
+      result = debugSheetData();
     } else {
       result = { status: "error", message: "Aksi '" + action + "' tidak dikenali oleh API." };
     }
@@ -694,4 +696,35 @@ function generateNextOtsId(regSheet, regCols, regLastRow) {
   const nextOtsNumber = maxOtsNumber + 1;
   const formattedNumber = ("000" + nextOtsNumber).slice(-3); // Minimal 3 digit, misal OTS001
   return "OTS" + formattedNumber;
+}
+
+function debugSheetData() {
+  const ss = getSpreadsheet();
+  const regSheet = getRegistrationSheet(ss);
+  const lastCol = regSheet.getLastColumn();
+  const lastRow = regSheet.getLastRow();
+  
+  const headers = regSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  
+  // Ambil baris-baris pertama (sampai 15)
+  const limit = Math.min(lastRow, 15);
+  const startValues = regSheet.getRange(1, 1, limit, lastCol).getValues();
+  
+  // Ambil beberapa baris dari tengah/lokasi PPI
+  const middleStart = Math.max(2, Math.floor(lastRow / 2) - 5);
+  const middleLimit = Math.min(lastRow - middleStart, 10);
+  let middleValues = [];
+  if (lastRow > 15 && middleLimit > 0) {
+    middleValues = regSheet.getRange(middleStart, 1, middleLimit, lastCol).getValues();
+  }
+  
+  return {
+    status: "success",
+    totalRows: lastRow,
+    totalCols: lastCol,
+    headers: headers,
+    sampleStart: startValues,
+    middleStartRow: middleStart,
+    sampleMiddle: middleValues
+  };
 }
