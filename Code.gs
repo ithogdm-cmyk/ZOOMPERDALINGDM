@@ -151,7 +151,11 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
     throw new Error("Sheet pendaftaran '" + CONFIG.REGISTRATION_SHEET_NAME + "' kosong.");
   }
   
-  let headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  // Baca seluruh data sheet pendaftaran dalam 1 panggilan API saja!
+  const allData = sheet.getDataRange().getValues();
+  const headers = allData[0];
+  const regLastRow = allData.length;
+  
   let idCol = -1;
   let emailCol = -1;
   let nameCol = -1;
@@ -177,12 +181,14 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
   }
   
   let currentLast = lastCol;
+  let needsHeaderUpdate = false;
   
   // Jika kolom ID belum ada, tambahkan di paling kanan
   if (idCol === -1) {
     currentLast++;
     sheet.getRange(1, currentLast).setValue("ID");
     idCol = currentLast;
+    needsHeaderUpdate = true;
   }
   
   if (emailCol === -1) throw new Error("Kolom 'Email' tidak ditemukan di baris pertama sheet 'RAW'.");
@@ -192,32 +198,37 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
     currentLast++;
     sheet.getRange(1, currentLast).setValue("WhatsApp");
     phoneCol = currentLast;
+    needsHeaderUpdate = true;
   }
   if (instCol === -1) {
     currentLast++;
     sheet.getRange(1, currentLast).setValue("Instansi");
     instCol = currentLast;
+    needsHeaderUpdate = true;
   }
   if (statusCol === -1) {
     currentLast++;
     sheet.getRange(1, currentLast).setValue("Tipe Registrasi");
     statusCol = currentLast;
+    needsHeaderUpdate = true;
+  }
+  
+  // Jika ada perubahan kolom header, flush perubahan dan baca ulang allData agar allData sinkron
+  if (needsHeaderUpdate) {
+    SpreadsheetApp.flush();
+    // Kembalikan kolom-kolom baru
+    return { idCol, emailCol, nameCol, phoneCol, instCol, statusCol };
   }
   
   // Backfill ID otomatis untuk data lama yang kosong
-  const regLastRow = sheet.getLastRow();
   if (regLastRow >= 2) {
-    const idRange = sheet.getRange(2, idCol, regLastRow - 1, 1);
-    const idValues = idRange.getValues();
-    const statusData = statusCol !== -1 ? sheet.getRange(2, statusCol, regLastRow - 1, 1).getValues() : [];
-    
     let regCount = 0;
     let otsCount = 0;
     let needsUpdate = false;
     
     // Tahap 1: Hitung angka maksimum REG dan OTS yang sudah ada
-    for (let i = 0; i < idValues.length; i++) {
-      const currentId = String(idValues[i][0]).trim().toUpperCase();
+    for (let i = 1; i < regLastRow; i++) {
+      const currentId = String(allData[i][idCol - 1] || "").trim().toUpperCase();
       if (currentId.indexOf("REG") === 0) {
         const num = parseInt(currentId.substring(3), 10);
         if (!isNaN(num) && num > regCount) regCount = num;
@@ -228,23 +239,26 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
     }
     
     // Tahap 2: Isi ID kosong dengan format berurutan
-    for (let i = 0; i < idValues.length; i++) {
-      const currentId = String(idValues[i][0]).trim();
+    const idValues = [];
+    for (let i = 1; i < regLastRow; i++) {
+      let currentId = String(allData[i][idCol - 1] || "").trim();
+      const statusType = statusCol !== -1 ? String(allData[i][statusCol - 1] || "").trim().toUpperCase() : "";
+      
       if (currentId === "" || currentId === "0" || currentId === "0.0") {
-        const statusType = statusData.length > 0 ? String(statusData[i][0] || "").trim().toUpperCase() : "";
         if (statusType.includes("OTS")) {
           otsCount++;
-          idValues[i][0] = "OTS" + ("000" + otsCount).slice(-3);
+          currentId = "OTS" + ("000" + otsCount).slice(-3);
         } else {
           regCount++;
-          idValues[i][0] = "REG" + ("000" + regCount).slice(-3);
+          currentId = "REG" + ("000" + regCount).slice(-3);
         }
         needsUpdate = true;
       }
+      idValues.push([currentId]);
     }
     
     if (needsUpdate) {
-      idRange.setValues(idValues);
+      sheet.getRange(2, idCol, regLastRow - 1, 1).setValues(idValues);
       SpreadsheetApp.flush();
     }
   }
@@ -478,22 +492,19 @@ function getDashboardData() {
   // 1. Ambil data pendaftaran (RAW)
   const regSheet = getRegistrationSheet(ss);
   const regCols = getRegistrationColumnIndicesAndPrepare(regSheet);
-  const regLastRow = regSheet.getLastRow();
+  
+  const allRegData = regSheet.getDataRange().getValues();
+  const regLastRow = allRegData.length;
   const tRegInfo = new Date().getTime();
   
   const registrants = [];
   if (regLastRow >= 2) {
-    const numRows = regLastRow - 1;
-    const idData = regSheet.getRange(2, regCols.idCol, numRows, 1).getValues();
-    const emailData = regSheet.getRange(2, regCols.emailCol, numRows, 1).getValues();
-    const nameData = regSheet.getRange(2, regCols.nameCol, numRows, 1).getValues();
-    const statusData = regCols.statusCol !== -1 ? regSheet.getRange(2, regCols.statusCol, numRows, 1).getValues() : [];
-    
-    for (let i = 0; i < numRows; i++) {
-      const id = String(idData[i][0] || "").trim();
-      const email = String(emailData[i][0]).trim().toLowerCase();
-      const name = String(nameData[i][0]).trim();
-      const statusType = statusData.length > 0 ? String(statusData[i][0] || "REGULER").trim() : "REGULER";
+    for (let i = 1; i < regLastRow; i++) {
+      const row = allRegData[i];
+      const id = String(row[regCols.idCol - 1] || "").trim();
+      const email = String(row[regCols.emailCol - 1] || "").trim().toLowerCase();
+      const name = String(row[regCols.nameCol - 1] || "").trim();
+      const statusType = regCols.statusCol !== -1 ? String(row[regCols.statusCol - 1] || "REGULER").trim() : "REGULER";
       
       if (email && name && name !== "0" && name !== "0.0") {
         registrants.push({
@@ -536,11 +547,14 @@ function getDashboardData() {
     }
   }
   
+  // Baca seluruh data kehadiran dalam 1 panggilan API saja!
+  const allAttData = attSheet.getDataRange().getValues();
+  const attRows = allAttData.length;
+  
   const attendanceMap = {};
-  if (attLastRow >= 2) {
-    const attData = attSheet.getRange(2, 1, attLastRow - 1, 5).getValues(); // 5 kolom: ID, Email, Nama, Status Kehadiran, Waktu Absen
-    for (let i = 0; i < attData.length; i++) {
-      const row = attData[i];
+  if (attRows >= 2) {
+    for (let i = 1; i < attRows; i++) {
+      const row = allAttData[i];
       const id = String(row[0]).trim();
       const email = String(row[1]).trim().toLowerCase();
       const name = String(row[2]).trim();
