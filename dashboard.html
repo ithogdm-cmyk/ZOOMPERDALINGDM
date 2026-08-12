@@ -801,6 +801,7 @@
             <thead>
               <tr>
                 <th style="width: 60px; text-align: center;">No</th>
+                <th style="width: 100px;">ID</th>
                 <th>Nama Lengkap</th>
                 <th>Email</th>
                 <th>Tipe Daftar</th>
@@ -978,6 +979,7 @@
         allParticipantsMerged = [];
         joinedParticipants.forEach(p => {
           allParticipantsMerged.push({
+            id: p.id || '-',
             name: p.name,
             email: p.email,
             type: p.type === 'OTS' ? 'OTS' : 'Reguler',
@@ -987,6 +989,7 @@
         });
         notJoinedParticipants.forEach(p => {
           allParticipantsMerged.push({
+            id: p.id || '-',
             name: p.name,
             email: p.email,
             type: p.type === 'OTS' ? 'OTS' : 'Reguler',
@@ -1020,10 +1023,14 @@
       if (currentTab === 'monitor') {
         // Tab 1: Live Monitor lists filter
         const filteredJoined = joinedParticipants.filter(p => 
-          p.name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query)
+          p.name.toLowerCase().includes(query) || 
+          p.email.toLowerCase().includes(query) ||
+          (p.id && p.id.toLowerCase().includes(query))
         );
         const filteredNotJoined = notJoinedParticipants.filter(p => 
-          p.name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query)
+          p.name.toLowerCase().includes(query) || 
+          p.email.toLowerCase().includes(query) ||
+          (p.id && p.id.toLowerCase().includes(query))
         );
         
         renderMonitorLists(filteredJoined, filteredNotJoined);
@@ -1032,7 +1039,8 @@
         const statusVal = filterStatus.value;
         const filteredTable = allParticipantsMerged.filter(p => {
           const matchQuery = p.name.toLowerCase().includes(query) || 
-                             p.email.toLowerCase().includes(query);
+                             p.email.toLowerCase().includes(query) ||
+                             (p.id && p.id.toLowerCase().includes(query));
                              
           let matchStatus = true;
           if (statusVal === 'hadir') {
@@ -1077,7 +1085,7 @@
           row.innerHTML = `
             <div class="part-info">
               <span class="part-name">${p.name}${otsTag}</span>
-              <span class="part-email">${p.email}</span>
+              <span class="part-email">${p.id ? `[${p.id}] ` : ''}${p.email}</span>
             </div>
             <span class="time-badge">${cleanTime}</span>
           `;
@@ -1095,7 +1103,7 @@
           row.innerHTML = `
             <div class="part-info">
               <span class="part-name" style="color: var(--text-main); font-weight: 500;">${p.name}</span>
-              <span class="part-email">${p.email}</span>
+              <span class="part-email">${p.id ? `[${p.id}] ` : ''}${p.email}</span>
             </div>
             <span class="status-absent-label">Belum Join</span>
           `;
@@ -1134,6 +1142,7 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="text-align: center; color: var(--text-light);">${index + 1}</td>
+          <td style="font-weight: 600; color: #4f46e5; font-size: 0.8125rem;">${p.id}</td>
           <td style="font-weight: 500;">${p.name}</td>
           <td style="color: var(--text-light);">${p.email}</td>
           <td>${typeBadge}</td>

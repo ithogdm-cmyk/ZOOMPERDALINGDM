@@ -108,21 +108,36 @@ function getAttendanceSheet(ss) {
     sheet = ss.insertSheet(CONFIG.ATTENDANCE_SHEET_NAME);
     
     // Inisialisasi Header
-    const headers = ["Email", "Nama", "Status Kehadiran", "Waktu Absen"];
+    const headers = ["ID", "Email", "Nama", "Status Kehadiran", "Waktu Absen"];
     sheet.appendRow(headers);
     
     // Styling Header
-    const headerRange = sheet.getRange(1, 1, 1, 4);
+    const headerRange = sheet.getRange(1, 1, 1, 5);
     headerRange.setFontWeight("bold");
     headerRange.setBackground("#f1f5f9");
     headerRange.setHorizontalAlignment("center");
     sheet.setFrozenRows(1);
     
     // Atur Lebar Kolom
-    sheet.setColumnWidth(1, 250);
+    sheet.setColumnWidth(1, 120);
     sheet.setColumnWidth(2, 250);
-    sheet.setColumnWidth(3, 150);
-    sheet.setColumnWidth(4, 200);
+    sheet.setColumnWidth(3, 250);
+    sheet.setColumnWidth(4, 150);
+    sheet.setColumnWidth(5, 200);
+  } else {
+    // Migrasi kolom ID jika belum ada di sheet Kehadiran yang sudah ada
+    const lastCol = sheet.getLastColumn();
+    if (lastCol > 0) {
+      const firstHeader = String(sheet.getRange(1, 1).getValue()).toLowerCase().trim();
+      if (firstHeader !== "id") {
+        sheet.insertColumnBefore(1);
+        sheet.getRange(1, 1).setValue("ID");
+        sheet.setColumnWidth(1, 120);
+        sheet.getRange(1, 1).setFontWeight("bold");
+        sheet.getRange(1, 1).setBackground("#f1f5f9");
+        sheet.getRange(1, 1).setHorizontalAlignment("center");
+      }
+    }
   }
   return sheet;
 }
@@ -137,6 +152,7 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
   }
   
   let headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  let idCol = -1;
   let emailCol = -1;
   let nameCol = -1;
   let phoneCol = -1;
@@ -145,7 +161,9 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
   
   for (let i = 0; i < headers.length; i++) {
     const header = String(headers[i]).toLowerCase().trim();
-    if (header.includes("email")) {
+    if (header === "id" || header === "no" || header === "no." || header === "nomor" || header.includes("id peserta") || header.includes("id_peserta") || header.includes("registration")) {
+      idCol = i + 1;
+    } else if (header.includes("email")) {
       emailCol = i + 1;
     } else if (header.includes("nama") || header.includes("name") || header.includes("fullname") || header.includes("peserta")) {
       nameCol = i + 1;
@@ -158,10 +176,17 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
     }
   }
   
+  let currentLast = lastCol;
+  
+  // Jika kolom ID belum ada, tambahkan di paling kanan
+  if (idCol === -1) {
+    currentLast++;
+    sheet.getRange(1, currentLast).setValue("ID");
+    idCol = currentLast;
+  }
+  
   if (emailCol === -1) throw new Error("Kolom 'Email' tidak ditemukan di baris pertama sheet 'RAW'.");
   if (nameCol === -1) throw new Error("Kolom 'Nama' tidak ditemukan di baris pertama sheet 'RAW'.");
-  
-  let currentLast = lastCol;
   
   if (phoneCol === -1) {
     currentLast++;
@@ -179,7 +204,7 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
     statusCol = currentLast;
   }
   
-  return { emailCol, nameCol, phoneCol, instCol, statusCol };
+  return { idCol, emailCol, nameCol, phoneCol, instCol, statusCol };
 }
 
 /**
@@ -204,6 +229,7 @@ function checkParticipant(email) {
   
   const regData = regSheet.getRange(2, 1, regLastRow - 1, regSheet.getLastColumn()).getValues();
   let name = "";
+  let id = "";
   let isRegistered = false;
   
   for (let i = 0; i < regData.length; i++) {
@@ -212,6 +238,7 @@ function checkParticipant(email) {
     const rowName = String(row[regCols.nameCol - 1]).trim();
     if (rowEmail === email && rowName && rowName !== "0" && rowName !== "0.0") {
       name = rowName;
+      id = String(row[regCols.idCol - 1] || "").trim();
       isRegistered = true;
       break;
     }
@@ -226,13 +253,13 @@ function checkParticipant(email) {
   const attLastRow = attSheet.getLastRow();
   
   if (attLastRow >= 2) {
-    const attData = attSheet.getRange(2, 1, attLastRow - 1, 4).getValues();
+    const attData = attSheet.getRange(2, 1, attLastRow - 1, 5).getValues(); // 5 kolom: ID, Email, Nama, Status Kehadiran, Waktu Absen
     for (let i = 0; i < attData.length; i++) {
       const row = attData[i];
-      const attEmail = String(row[0]).trim().toLowerCase();
+      const attId = String(row[0]).trim();
       
-      if (attEmail === email) {
-        const timestamp = row[3];
+      if (attId === id) {
+        const timestamp = row[4];
         let formattedTime = "";
         if (timestamp instanceof Date) {
           formattedTime = Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "dd MMMM yyyy HH:mm:ss");
@@ -268,12 +295,13 @@ function recordAttendance(email) {
   email = email.trim().toLowerCase();
   const ss = getSpreadsheet();
   
-  // 1. Ambil Nama dari data pendaftaran 'RAW'
+  // 1. Ambil Nama dan ID dari data pendaftaran 'RAW'
   const regSheet = getRegistrationSheet(ss);
   const regCols = getRegistrationColumnIndicesAndPrepare(regSheet);
   const regLastRow = regSheet.getLastRow();
   
   let name = "";
+  let id = "";
   let isRegistered = false;
   
   if (regLastRow >= 2) {
@@ -284,6 +312,7 @@ function recordAttendance(email) {
       const rowName = String(row[regCols.nameCol - 1]).trim();
       if (rowEmail === email && rowName && rowName !== "0" && rowName !== "0.0") {
         name = rowName;
+        id = String(row[regCols.idCol - 1] || "").trim();
         isRegistered = true;
         break;
       }
@@ -294,23 +323,23 @@ function recordAttendance(email) {
     return { status: "error", message: "Email pendaftaran tidak ditemukan." };
   }
   
-  // 2. Cek double-submit di sheet 'Kehadiran'
+  // 2. Cek double-submit di sheet 'Kehadiran' berdasarkan ID
   const attSheet = getAttendanceSheet(ss);
   const attLastRow = attSheet.getLastRow();
   
   if (attLastRow >= 2) {
-    const attData = attSheet.getRange(2, 1, attLastRow - 1, 1).getValues();
+    const attData = attSheet.getRange(2, 1, attLastRow - 1, 1).getValues(); // Kolom 1 adalah ID
     for (let i = 0; i < attData.length; i++) {
-      const attEmail = String(attData[i][0]).trim().toLowerCase();
-      if (attEmail === email) {
+      const attId = String(attData[i][0]).trim();
+      if (attId === id) {
         return { status: "error", message: "Kehadiran Anda sudah tercatat sebelumnya." };
       }
     }
   }
   
-  // 3. Tambahkan baris kehadiran baru
+  // 3. Tambahkan baris kehadiran baru (ID, Email, Nama, Status Kehadiran, Waktu Absen)
   const now = new Date();
-  attSheet.appendRow([email, name, "HADIR", now]);
+  attSheet.appendRow([id, email, name, "HADIR", now]);
   SpreadsheetApp.flush();
   
   const formattedTime = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd MMMM yyyy HH:mm:ss");
@@ -353,30 +382,35 @@ function registerOTS(email, name, phone, institution) {
     }
   }
   
-  // 2. Tambah data ke sheet 'RAW' pada kolom yang sesuai
+  // 2. Generate Next OTS ID (OTS001, OTS002, dst)
+  const otsId = generateNextOtsId(regSheet, regCols, regLastRow);
+  
+  // 3. Tambah data ke sheet 'RAW' pada kolom yang sesuai
   const nextRow = regSheet.getLastRow() + 1;
+  regSheet.getRange(nextRow, regCols.idCol).setValue(otsId);
   regSheet.getRange(nextRow, regCols.emailCol).setValue(email);
   regSheet.getRange(nextRow, regCols.nameCol).setValue(name);
   regSheet.getRange(nextRow, regCols.phoneCol).setValue(phone);
   regSheet.getRange(nextRow, regCols.instCol).setValue(institution);
   regSheet.getRange(nextRow, regCols.statusCol).setValue("OTS");
   
-  // 3. Catat di sheet 'Kehadiran'
+  // 4. Catat di sheet 'Kehadiran' (ID, Email, Nama, Status Kehadiran, Waktu Absen)
   const attSheet = getAttendanceSheet(ss);
-  
   const attLastRow = attSheet.getLastRow();
+  
   if (attLastRow >= 2) {
-    const attData = attSheet.getRange(2, 1, attLastRow - 1, 1).getValues();
+    const attData = attSheet.getRange(2, 1, attLastRow - 1, 2).getValues(); // Baca 2 kolom pertama (ID, Email)
     for (let i = 0; i < attData.length; i++) {
-      const attEmail = String(attData[i][0]).trim().toLowerCase();
-      if (attEmail === email) {
+      const attId = String(attData[i][0]).trim();
+      const attEmail = String(attData[i][1]).trim().toLowerCase();
+      if (attId === otsId || attEmail === email) {
         return { status: "error", message: "Email sudah terdaftar absen." };
       }
     }
   }
   
   const now = new Date();
-  attSheet.appendRow([email, name, "HADIR (OTS)", now]);
+  attSheet.appendRow([otsId, email, name, "HADIR (OTS)", now]);
   SpreadsheetApp.flush();
   
   const formattedTime = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd MMMM yyyy HH:mm:ss");
@@ -405,17 +439,20 @@ function getDashboardData() {
   const registrants = [];
   if (regLastRow >= 2) {
     const numRows = regLastRow - 1;
+    const idData = regSheet.getRange(2, regCols.idCol, numRows, 1).getValues();
     const emailData = regSheet.getRange(2, regCols.emailCol, numRows, 1).getValues();
     const nameData = regSheet.getRange(2, regCols.nameCol, numRows, 1).getValues();
     const statusData = regCols.statusCol !== -1 ? regSheet.getRange(2, regCols.statusCol, numRows, 1).getValues() : [];
     
     for (let i = 0; i < numRows; i++) {
+      const id = String(idData[i][0] || "").trim();
       const email = String(emailData[i][0]).trim().toLowerCase();
       const name = String(nameData[i][0]).trim();
       const statusType = statusData.length > 0 ? String(statusData[i][0] || "REGULER").trim() : "REGULER";
       
       if (email && name && name !== "0" && name !== "0.0") {
         registrants.push({
+          id: id,
           email: email,
           name: name,
           type: statusType
@@ -431,13 +468,14 @@ function getDashboardData() {
   
   const attendanceMap = {};
   if (attLastRow >= 2) {
-    const attData = attSheet.getRange(2, 1, attLastRow - 1, 4).getValues();
+    const attData = attSheet.getRange(2, 1, attLastRow - 1, 5).getValues(); // 5 kolom: ID, Email, Nama, Status Kehadiran, Waktu Absen
     for (let i = 0; i < attData.length; i++) {
       const row = attData[i];
-      const email = String(row[0]).trim().toLowerCase();
-      const name = String(row[1]).trim();
-      const status = String(row[2]).trim();
-      const timestamp = row[3];
+      const id = String(row[0]).trim();
+      const email = String(row[1]).trim().toLowerCase();
+      const name = String(row[2]).trim();
+      const status = String(row[3]).trim();
+      const timestamp = row[4];
       
       let formattedTime = "";
       if (timestamp instanceof Date) {
@@ -446,8 +484,9 @@ function getDashboardData() {
         formattedTime = String(timestamp);
       }
       
-      if (email && name && name !== "0" && name !== "0.0") {
-        attendanceMap[email] = {
+      if (id && name && name !== "0" && name !== "0.0") {
+        attendanceMap[id] = {
+          email: email,
           name: name,
           status: status,
           time: formattedTime
@@ -463,17 +502,19 @@ function getDashboardData() {
   let totalOTS = 0;
   
   registrants.forEach(reg => {
-    if (attendanceMap[reg.email]) {
+    if (attendanceMap[reg.id]) {
       presentList.push({
+        id: reg.id,
         email: reg.email,
         name: reg.name,
         type: reg.type,
-        time: attendanceMap[reg.email].time,
-        status: attendanceMap[reg.email].status
+        time: attendanceMap[reg.id].time,
+        status: attendanceMap[reg.id].status
       });
       if (reg.type === "OTS") totalOTS++;
     } else {
       absentList.push({
+        id: reg.id,
         email: reg.email,
         name: reg.name,
         type: reg.type
@@ -482,12 +523,13 @@ function getDashboardData() {
   });
   
   // Tambahan cadangan jika ada di sheet Kehadiran tapi belum di RAW (misalnya pendaftar OTS)
-  Object.keys(attendanceMap).forEach(attEmail => {
-    const foundInRegistrants = registrants.some(r => r.email === attEmail);
+  Object.keys(attendanceMap).forEach(attId => {
+    const foundInRegistrants = registrants.some(r => r.id === attId);
     if (!foundInRegistrants) {
-      const attInfo = attendanceMap[attEmail];
+      const attInfo = attendanceMap[attId];
       presentList.push({
-        email: attEmail,
+        id: attId,
+        email: attInfo.email,
         name: attInfo.name,
         type: attInfo.status.includes("OTS") ? "OTS" : "REGULER",
         time: attInfo.time,
@@ -525,4 +567,27 @@ function getDashboardData() {
       totalExecution: tEnd - tStart
     }
   };
+}
+
+/**
+ * Membuat ID OTS otomatis berikutnya (misalnya OTS001, OTS002, dst)
+ */
+function generateNextOtsId(regSheet, regCols, regLastRow) {
+  let maxOtsNumber = 0;
+  if (regLastRow >= 2) {
+    const ids = regSheet.getRange(2, regCols.idCol, regLastRow - 1, 1).getValues();
+    for (let i = 0; i < ids.length; i++) {
+      const currentId = String(ids[i][0]).trim();
+      if (currentId.toUpperCase().indexOf("OTS") === 0) {
+        const numStr = currentId.substring(3);
+        const num = parseInt(numStr, 10);
+        if (!isNaN(num) && num > maxOtsNumber) {
+          maxOtsNumber = num;
+        }
+      }
+    }
+  }
+  const nextOtsNumber = maxOtsNumber + 1;
+  const formattedNumber = ("000" + nextOtsNumber).slice(-3); // Minimal 3 digit, misal OTS001
+  return "OTS" + formattedNumber;
 }
