@@ -570,6 +570,48 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* Password Modal overlay */
+    .password-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(248, 250, 252, 0.95);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: var(--transition);
+    }
+    
+    .password-card {
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.1);
+      text-align: center;
+    }
+    
+    .password-card h2 {
+      font-family: var(--font-title);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .password-card p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
     .empty-text {
       text-align: center;
       padding: 32px 0;
@@ -589,6 +631,31 @@
   </style>
 </head>
 <body>
+
+  <!-- Password Protection Modal -->
+  <div id="password-modal" class="password-overlay">
+    <div class="password-card">
+      <div style="width: 56px; height: 56px; border-radius: 12px; background: rgba(99, 102, 241, 0.08); display: inline-flex; align-items: center; justify-content: center; color: rgb(99, 102, 241); margin-bottom: 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+      </div>
+      <h2>Akses Terbatas</h2>
+      <p>Masukkan password administrator untuk melihat dashboard.</p>
+      
+      <div id="pwd-alert-container" style="margin-bottom: 16px; font-size: 0.8125rem; color: #b91c1c; text-align: left; padding: 10px 14px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; display: none;"></div>
+      
+      <form onsubmit="submitPassword(event)">
+        <div class="form-group" style="margin-bottom: 20px; text-align: left;">
+          <label for="pwd-input" class="form-label" style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Password Admin</label>
+          <input type="password" id="pwd-input" class="search-input" style="padding-left: 16px;" placeholder="Masukkan password..." required>
+        </div>
+        <button type="submit" class="tab-btn active" style="width: 100%; justify-content: center; padding: 12px 24px; border-radius: 12px; border-color: rgba(99, 102, 241, 0.25); background: rgba(99, 102, 241, 0.08); color: #4f46e5;">
+          <span>Masuk</span>
+        </button>
+      </form>
+    </div>
+  </div>
 
   <div class="glow-1"></div>
   <div class="glow-2"></div>
@@ -824,11 +891,18 @@
     /**
      * Retrieve Data from GAS API
      */
-    function fetchData() {
+    function fetchData(providedPassword) {
       loader.classList.add('active');
       
       if (!WEBINAR_CONFIG.API_URL || WEBINAR_CONFIG.API_URL.includes("AKfycbxxxxxxxxx")) {
         console.warn("API_URL is not configured yet in config.js");
+        loader.classList.remove('active');
+        return;
+      }
+      
+      const pwd = providedPassword || sessionStorage.getItem('admin_password');
+      if (!pwd) {
+        document.getElementById('password-modal').style.display = 'flex';
         loader.classList.remove('active');
         return;
       }
@@ -841,7 +915,8 @@
           "Content-Type": "text/plain"
         },
         body: JSON.stringify({
-          action: "getDashboard"
+          action: "getDashboard",
+          password: pwd
         })
       })
       .then(response => {
@@ -850,8 +925,34 @@
         }
         return response.json();
       })
-      .then(data => onFetchSuccess(data))
+      .then(data => {
+        if (data.status === 'error' && data.message.includes('Password')) {
+          sessionStorage.removeItem('admin_password');
+          document.getElementById('password-modal').style.display = 'flex';
+          const alertBox = document.getElementById('pwd-alert-container');
+          alertBox.textContent = data.message;
+          alertBox.style.display = 'block';
+          loader.classList.remove('active');
+        } else {
+          sessionStorage.setItem('admin_password', pwd);
+          document.getElementById('password-modal').style.display = 'none';
+          onFetchSuccess(data);
+        }
+      })
       .catch(error => onFetchFailure(error));
+    }
+
+    /**
+     * Submit Password Handler
+     */
+    function submitPassword(e) {
+      e.preventDefault();
+      const pwdInput = document.getElementById('pwd-input');
+      const pwd = pwdInput.value.trim();
+      if (!pwd) return;
+      
+      document.getElementById('pwd-alert-container').style.display = 'none';
+      fetchData(pwd);
     }
 
     function onFetchSuccess(response) {

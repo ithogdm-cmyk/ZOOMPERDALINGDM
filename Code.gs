@@ -15,7 +15,8 @@
 const CONFIG = {
   REGISTRATION_SHEET_NAME: "RAW",
   ATTENDANCE_SHEET_NAME: "Kehadiran",
-  SPREADSHEET_ID: "" // Kosongkan jika script di-bind langsung ke Spreadsheet
+  SPREADSHEET_ID: "", // Kosongkan jika script di-bind langsung ke Spreadsheet
+  ADMIN_PASSWORD: "adminperdalin" // Password default untuk masuk ke dashboard admin
 };
 
 /**
@@ -53,7 +54,11 @@ function doPost(e) {
     } else if (action === "registerOTS") {
       result = registerOTS(postData.email, postData.name, postData.phone, postData.institution);
     } else if (action === "getDashboard") {
-      result = getDashboardData();
+      if (postData.password !== CONFIG.ADMIN_PASSWORD) {
+        result = { status: "error", message: "Password admin salah atau akses ditolak." };
+      } else {
+        result = getDashboardData();
+      }
     } else {
       result = { status: "error", message: "Aksi '" + action + "' tidak dikenali oleh API." };
     }
