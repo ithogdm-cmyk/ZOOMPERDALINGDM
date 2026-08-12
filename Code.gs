@@ -16,7 +16,7 @@ const CONFIG = {
   REGISTRATION_SHEET_NAME: "RAW",
   ATTENDANCE_SHEET_NAME: "Kehadiran",
   SPREADSHEET_ID: "", // Kosongkan jika script di-bind langsung ke Spreadsheet
-  ADMIN_PASSWORD: "adminperdalin" // Password default untuk masuk ke dashboard admin
+  ADMIN_PASSWORD: "#GDMPERDALIN26" // Password default untuk masuk ke dashboard admin
 };
 
 /**
@@ -420,6 +420,7 @@ function getDashboardData() {
     for (let i = 0; i < attData.length; i++) {
       const row = attData[i];
       const email = String(row[0]).trim().toLowerCase();
+      const name = String(row[1]).trim();
       const status = String(row[2]).trim();
       const timestamp = row[3];
       
@@ -431,6 +432,7 @@ function getDashboardData() {
       }
       
       attendanceMap[email] = {
+        name: name,
         status: status,
         time: formattedTime
       };
@@ -461,36 +463,19 @@ function getDashboardData() {
     }
   });
   
-  // Tambahan cadangan jika ada di sheet Kehadiran tapi belum di RAW
+  // Tambahan cadangan jika ada di sheet Kehadiran tapi belum di RAW (misalnya pendaftar OTS)
   Object.keys(attendanceMap).forEach(attEmail => {
     const foundInRegistrants = registrants.some(r => r.email === attEmail);
     if (!foundInRegistrants) {
-      const attLastRow = attSheet.getLastRow();
-      const attData = attSheet.getRange(2, 1, attLastRow - 1, 4).getValues();
-      for (let i = 0; i < attData.length; i++) {
-        const row = attData[i];
-        if (String(row[0]).trim().toLowerCase() === attEmail) {
-          const name = String(row[1]).trim();
-          const status = String(row[2]).trim();
-          const timestamp = row[3];
-          let formattedTime = "";
-          if (timestamp instanceof Date) {
-            formattedTime = Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "dd MMM yyyy HH:mm:ss");
-          } else if (timestamp) {
-            formattedTime = String(timestamp);
-          }
-          
-          presentList.push({
-            email: attEmail,
-            name: name,
-            type: status.includes("OTS") ? "OTS" : "REGULER",
-            time: formattedTime,
-            status: status
-          });
-          if (status.includes("OTS")) totalOTS++;
-          break;
-        }
-      }
+      const attInfo = attendanceMap[attEmail];
+      presentList.push({
+        email: attEmail,
+        name: attInfo.name,
+        type: attInfo.status.includes("OTS") ? "OTS" : "REGULER",
+        time: attInfo.time,
+        status: attInfo.status
+      });
+      if (attInfo.status.includes("OTS")) totalOTS++;
     }
   });
   
