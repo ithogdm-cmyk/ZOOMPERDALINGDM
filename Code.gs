@@ -169,7 +169,7 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
       idCol = i + 1;
     } else if (header.includes("email")) {
       emailCol = i + 1;
-    } else if (header.includes("nama") || header.includes("name") || header.includes("fullname") || header.includes("peserta")) {
+    } else if (header.includes("nama") || header.includes("name") || header.includes("fullname") || header === "nama peserta" || header === "nama_peserta") {
       nameCol = i + 1;
     } else if (header.includes("tel") || header.includes("hp") || header.includes("phone") || header.includes("wa")) {
       phoneCol = i + 1;
