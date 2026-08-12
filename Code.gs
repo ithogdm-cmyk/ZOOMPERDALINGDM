@@ -165,7 +165,7 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
   
   for (let i = 0; i < headers.length; i++) {
     const header = String(headers[i]).toLowerCase().trim();
-    if (header === "id" || header === "no" || header === "no." || header === "nomor" || header.includes("id peserta") || header.includes("id_peserta") || header.includes("registration")) {
+    if (header === "id" || header === "no" || header === "no." || header === "nomor" || header === "idp" || header.includes("id peserta") || header.includes("id_peserta") || header.includes("registration")) {
       idCol = i + 1;
     } else if (header.includes("email")) {
       emailCol = i + 1;
