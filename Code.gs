@@ -390,12 +390,15 @@ function registerOTS(email, name, phone, institution) {
  * Menghimpun data kehadiran dan data tidak hadir untuk Dashboard & Admin panel
  */
 function getDashboardData() {
+  const tStart = new Date().getTime();
   const ss = getSpreadsheet();
+  const tSS = new Date().getTime();
   
   // 1. Ambil data pendaftaran (RAW)
   const regSheet = getRegistrationSheet(ss);
   const regCols = getRegistrationColumnIndicesAndPrepare(regSheet);
   const regLastRow = regSheet.getLastRow();
+  const tRegInfo = new Date().getTime();
   
   const registrants = [];
   if (regLastRow >= 2) {
@@ -418,6 +421,7 @@ function getDashboardData() {
       }
     }
   }
+  const tRegData = new Date().getTime();
   
   // 2. Ambil data kehadiran (Kehadiran)
   const attSheet = getAttendanceSheet(ss);
@@ -447,6 +451,7 @@ function getDashboardData() {
       };
     }
   }
+  const tAttData = new Date().getTime();
   
   // 3. Susun data Sudah Hadir (presentList) dan Belum Hadir (absentList)
   const presentList = [];
@@ -495,6 +500,8 @@ function getDashboardData() {
   const totalPresent = presentList.length;
   const pctPresent = totalRegistered > 0 ? Math.round((totalPresent / totalRegistered) * 100) : 0;
   
+  const tEnd = new Date().getTime();
+  
   return {
     status: "success",
     presentList: presentList,
@@ -504,6 +511,14 @@ function getDashboardData() {
       totalPresent: totalPresent,
       totalOTS: totalOTS,
       pctPresent: pctPresent
+    },
+    timings: {
+      initSpreadsheet: tSS - tStart,
+      loadRegInfo: tRegInfo - tSS,
+      loadRegData: tRegData - tRegInfo,
+      loadAttData: tAttData - tRegData,
+      processData: tEnd - tAttData,
+      totalExecution: tEnd - tStart
     }
   };
 }
