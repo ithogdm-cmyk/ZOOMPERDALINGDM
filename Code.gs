@@ -209,8 +209,9 @@ function checkParticipant(email) {
   for (let i = 0; i < regData.length; i++) {
     const row = regData[i];
     const rowEmail = String(row[regCols.emailCol - 1]).trim().toLowerCase();
-    if (rowEmail === email) {
-      name = row[regCols.nameCol - 1];
+    const rowName = String(row[regCols.nameCol - 1]).trim();
+    if (rowEmail === email && rowName && rowName !== "0" && rowName !== "0.0") {
+      name = rowName;
       isRegistered = true;
       break;
     }
@@ -280,8 +281,9 @@ function recordAttendance(email) {
     for (let i = 0; i < regData.length; i++) {
       const row = regData[i];
       const rowEmail = String(row[regCols.emailCol - 1]).trim().toLowerCase();
-      if (rowEmail === email) {
-        name = row[regCols.nameCol - 1];
+      const rowName = String(row[regCols.nameCol - 1]).trim();
+      if (rowEmail === email && rowName && rowName !== "0" && rowName !== "0.0") {
+        name = rowName;
         isRegistered = true;
         break;
       }
@@ -412,7 +414,7 @@ function getDashboardData() {
       const name = String(nameData[i][0]).trim();
       const statusType = statusData.length > 0 ? String(statusData[i][0] || "REGULER").trim() : "REGULER";
       
-      if (email) {
+      if (email && name && name !== "0" && name !== "0.0") {
         registrants.push({
           email: email,
           name: name,
@@ -444,11 +446,13 @@ function getDashboardData() {
         formattedTime = String(timestamp);
       }
       
-      attendanceMap[email] = {
-        name: name,
-        status: status,
-        time: formattedTime
-      };
+      if (email && name && name !== "0" && name !== "0.0") {
+        attendanceMap[email] = {
+          name: name,
+          status: status,
+          time: formattedTime
+        };
+      }
     }
   }
   const tAttData = new Date().getTime();
