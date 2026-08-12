@@ -204,6 +204,51 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
     statusCol = currentLast;
   }
   
+  // Backfill ID otomatis untuk data lama yang kosong
+  const regLastRow = sheet.getLastRow();
+  if (regLastRow >= 2) {
+    const idRange = sheet.getRange(2, idCol, regLastRow - 1, 1);
+    const idValues = idRange.getValues();
+    const statusData = statusCol !== -1 ? sheet.getRange(2, statusCol, regLastRow - 1, 1).getValues() : [];
+    
+    let regCount = 0;
+    let otsCount = 0;
+    let needsUpdate = false;
+    
+    // Tahap 1: Hitung angka maksimum REG dan OTS yang sudah ada
+    for (let i = 0; i < idValues.length; i++) {
+      const currentId = String(idValues[i][0]).trim().toUpperCase();
+      if (currentId.indexOf("REG") === 0) {
+        const num = parseInt(currentId.substring(3), 10);
+        if (!isNaN(num) && num > regCount) regCount = num;
+      } else if (currentId.indexOf("OTS") === 0) {
+        const num = parseInt(currentId.substring(3), 10);
+        if (!isNaN(num) && num > otsCount) otsCount = num;
+      }
+    }
+    
+    // Tahap 2: Isi ID kosong dengan format berurutan
+    for (let i = 0; i < idValues.length; i++) {
+      const currentId = String(idValues[i][0]).trim();
+      if (currentId === "" || currentId === "0" || currentId === "0.0") {
+        const statusType = statusData.length > 0 ? String(statusData[i][0] || "").trim().toUpperCase() : "";
+        if (statusType.includes("OTS")) {
+          otsCount++;
+          idValues[i][0] = "OTS" + ("000" + otsCount).slice(-3);
+        } else {
+          regCount++;
+          idValues[i][0] = "REG" + ("000" + regCount).slice(-3);
+        }
+        needsUpdate = true;
+      }
+    }
+    
+    if (needsUpdate) {
+      idRange.setValues(idValues);
+      SpreadsheetApp.flush();
+    }
+  }
+  
   return { idCol, emailCol, nameCol, phoneCol, instCol, statusCol };
 }
 
@@ -465,6 +510,31 @@ function getDashboardData() {
   // 2. Ambil data kehadiran (Kehadiran)
   const attSheet = getAttendanceSheet(ss);
   const attLastRow = attSheet.getLastRow();
+  
+  // Backfill otomatis ID di sheet Kehadiran yang masih kosong berdasarkan email matching dari RAW
+  if (attLastRow >= 2) {
+    const attRange = attSheet.getRange(2, 1, attLastRow - 1, 2); // Kolom 1 (ID), Kolom 2 (Email)
+    const attValues = attRange.getValues();
+    let attNeedsUpdate = false;
+    
+    for (let i = 0; i < attValues.length; i++) {
+      const attId = String(attValues[i][0]).trim();
+      const attEmail = String(attValues[i][1]).trim().toLowerCase();
+      
+      if (attId === "" || attId === "0" || attId === "0.0") {
+        const matchedReg = registrants.find(r => r.email === attEmail);
+        if (matchedReg) {
+          attValues[i][0] = matchedReg.id;
+          attNeedsUpdate = true;
+        }
+      }
+    }
+    
+    if (attNeedsUpdate) {
+      attSheet.getRange(2, 1, attLastRow - 1, 2).setValues(attValues);
+      SpreadsheetApp.flush();
+    }
+  }
   
   const attendanceMap = {};
   if (attLastRow >= 2) {
