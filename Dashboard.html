@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard & Admin</title>
+  <!-- Load Konfigurasi Eksternal -->
+  <script src="config.js"></script>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* =========================================================================
+       CSS RESET & BASE STYLES (PREMIUM LIGHT THEME - 2026 EDITION)
+       ========================================================================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: 238, 85%, 64%; /* Royal Blue */
+      --primary-hover: 238, 85%, 58%;
+      --success: 16, 185, 129; /* Emerald */
+      --error: 350, 89%, 60%;
+      --warning: 38, 92%, 50%;
+      --info: 59, 130, 246%;
+      
+      --text-main: #0f172a; /* Slate 900 */
+      --text-muted: #475569; /* Slate 600 */
+      --text-light: #64748b; /* Slate 500 */
+      
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: #f8fafc; /* Soft Slate 50 Background */
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 24px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Glows (Pastel Soft) */
+    .glow-1 {
+      position: absolute;
+      top: -10%;
+      right: -10%;
+      width: 50vw;
+      height: 50vw;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+      filter: blur(100px);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .glow-2 {
+      position: absolute;
+      bottom: -10%;
+      left: -10%;
+      width: 50vw;
+      height: 50vw;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.04) 0%, rgba(0, 0, 0, 0) 70%);
+      filter: blur(100px);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* =========================================================================
+       LAYOUT STRUCTURE & CONTAINER
+       ========================================================================= */
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      z-index: 10;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    /* Header Section */
+    .header-section {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header-section h1 {
+      font-family: var(--font-title);
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .header-section p {
+      font-size: 0.9375rem;
+      color: var(--text-muted);
+    }
+
+    /* Tabs Navigation */
+    .tabs-container {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    .tab-btn {
+      padding: 10px 24px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1; /* Slate 300 */
+      color: var(--text-muted);
+      border-radius: 100px;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+
+    .tab-btn:hover {
+      background: #f1f5f9;
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: rgba(99, 102, 241, 0.25);
+      color: #4f46e5;
+    }
+
+    /* =========================================================================
+       SUMMARY PANEL (KPI STATS)
+       ========================================================================= */
+    .summary-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 20px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.05);
+    }
+
+    .summary-stats {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-bottom: 20px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.8125rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: var(--font-title);
+      font-size: 2.25rem;
+      font-weight: 800;
+    }
+
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0; /* Slate 200 */
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, rgb(99, 102, 241), rgb(16, 185, 129));
+      border-radius: 100px;
+      transition: width 1s ease-in-out;
+    }
+
+    /* Global Search and Refresh bar */
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .search-container {
+      position: relative;
+      flex-grow: 1;
+      max-width: 500px;
+    }
+
+    .search-container svg {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      width: 20px;
+      height: 20px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px 12px 48px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      transition: var(--transition);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: rgb(99, 102, 241);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .control-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .filter-select {
+      padding: 12px 20px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .filter-select:focus {
+      border-color: rgb(99, 102, 241);
+    }
+
+    .btn-icon {
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: var(--text-main);
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+
+    .btn-icon:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    /* =========================================================================
+       TAB 1: LIVE MONITOR (TWO COLUMNS LIST)
+       ========================================================================= */
+    .view-content {
+      display: none;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .view-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .monitor-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .column-panel {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 24px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      max-height: 600px;
+      box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.05);
+    }
+
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .column-title {
+      font-family: var(--font-title);
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .counter-badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-weight: 700;
+    }
+
+    .badge-joined { background: rgba(16, 185, 129, 0.1); color: #065f46; }
+    .badge-notjoined { background: #f1f5f9; color: var(--text-light); }
+
+    .list-wrapper {
+      overflow-y: auto;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+
+    /* Custom scrollbar */
+    .list-wrapper::-webkit-scrollbar, .table-container::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .list-wrapper::-webkit-scrollbar-thumb, .table-container::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+
+    .list-wrapper::-webkit-scrollbar-thumb:hover, .table-container::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .participant-row {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: var(--transition);
+    }
+
+    .participant-row:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .part-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      text-align: left;
+    }
+
+    .part-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .part-email {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    .part-badge-ots {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #dbeafe; /* Soft blue */
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      margin-left: 6px;
+      display: inline-block;
+    }
+
+    .time-badge {
+      font-size: 0.75rem;
+      color: #065f46;
+      background: rgba(16, 185, 129, 0.08);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    
+    .status-absent-label {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    /* =========================================================================
+       TAB 2: DETAIL TABLE (ADMIN PANEL)
+       ========================================================================= */
+    .table-panel {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.05);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    thead {
+      background: #f1f5f9;
+      border-bottom: 1px solid #cbd5e1;
+    }
+
+    th {
+      padding: 16px 20px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 14px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      color: var(--text-main);
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-present {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge-ots {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    .badge-absent {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+
+    .badge-type-ots {
+      background: #fce7f3;
+      color: #9d174d;
+      border: 1px solid #fbcfe8;
+    }
+
+    /* =========================================================================
+       GLOBAL STATES & LOADERS
+       ========================================================================= */
+    .loader-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      border-radius: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      color: var(--text-main);
+    }
+
+    .loader-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(99, 102, 241, 0.1);
+      border-top-color: rgb(99, 102, 241);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .empty-text {
+      text-align: center;
+      padding: 32px 0;
+      color: var(--text-light);
+      font-size: 0.875rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+      .monitor-grid {
+        grid-template-columns: 1fr;
+      }
+      .column-panel {
+        max-height: 450px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+
+  <div class="container">
+    
+    <!-- =========================================================================
+         HEADER & NAVIGATION TABS
+         ========================================================================= -->
+    <div class="header-section">
+      <h1>Dashboard Monitor & Admin</h1>
+      <p id="dashboard-webinar-title">-</p>
+      
+      <div class="tabs-container">
+        <button id="tab-monitor-btn" onclick="switchTab('monitor')" class="tab-btn active">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+          </svg>
+          <span>Live Monitor</span>
+        </button>
+        <button id="tab-admin-btn" onclick="switchTab('admin')" class="tab-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+          </svg>
+          <span>Detail & Kelola (Admin)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         SUMMARY STATS CARD
+         ========================================================================= -->
+    <div class="summary-card" style="position: relative;">
+      <div id="loader" class="loader-overlay active">
+        <div class="spinner"></div>
+        <p>Sinkronisasi database kehadiran...</p>
+      </div>
+
+      <div class="summary-stats">
+        <div class="stat-item">
+          <span class="stat-label">Terdaftar</span>
+          <span id="stat-registered" class="stat-value" style="color: #4f46e5;">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Sudah Join</span>
+          <span id="stat-present" class="stat-value" style="color: #059669;">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Belum Join</span>
+          <span id="stat-absent" class="stat-value" style="color: var(--text-light);">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Registrasi OTS</span>
+          <span id="stat-ots" class="stat-value" style="color: #db2777;">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Rasio Kehadiran</span>
+          <span id="stat-pct" class="stat-value" style="color: #d97706;">-</span>
+        </div>
+      </div>
+      
+      <div class="progress-container">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         CONTROL BAR (SEARCH & ACTIONS)
+         ========================================================================= -->
+    <div class="control-row">
+      <div class="search-container">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+        </svg>
+        <input type="text" id="search-input" oninput="applyFilterAndSearch()" class="search-input" placeholder="Cari nama, email, atau instansi...">
+      </div>
+
+      <div class="control-actions">
+        <select id="filter-status" onchange="applyFilterAndSearch()" class="filter-select" style="display: none;">
+          <option value="all">Semua Kehadiran</option>
+          <option value="hadir">Hadir (Semua)</option>
+          <option value="hadir-reg">Hadir (Reguler)</option>
+          <option value="hadir-ots">Hadir (On-The-Spot)</option>
+          <option value="belum">Belum Hadir</option>
+        </select>
+        
+        <button onclick="fetchData()" class="btn-icon" title="Refresh Data">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 18px; height: 18px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB CONTENT 1: LIVE MONITOR VIEW
+         ========================================================================= -->
+    <div id="view-monitor" class="view-content active">
+      <div class="monitor-grid">
+        
+        <!-- Column Left: Joined -->
+        <div class="column-panel">
+          <div class="column-header">
+            <div class="column-title">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#059669" style="width: 20px; height: 20px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+              </svg>
+              <span>Sudah Join</span>
+            </div>
+            <span id="badge-joined" class="counter-badge badge-joined">-</span>
+          </div>
+          <div id="list-joined" class="list-wrapper">
+            <!-- Dynamic Joined Row -->
+          </div>
+        </div>
+
+        <!-- Column Right: Not Joined -->
+        <div class="column-panel">
+          <div class="column-header">
+            <div class="column-title">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#64748b" style="width: 20px; height: 20px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+              <span>Belum Join</span>
+            </div>
+            <span id="badge-notjoined" class="counter-badge badge-notjoined">-</span>
+          </div>
+          <div id="list-notjoined" class="list-wrapper">
+            <!-- Dynamic Not Joined Row -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB CONTENT 2: ADMIN DETAILED TABLE
+         ========================================================================= -->
+    <div id="view-admin" class="view-content">
+      <div class="table-panel">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 60px; text-align: center;">No</th>
+                <th>Nama Lengkap</th>
+                <th>Email</th>
+                <th>Tipe Daftar</th>
+                <th>Waktu Absen</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <!-- Dynamic Table Rows -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="empty-state-table" class="empty-text" style="display: none;">
+          Tidak ada data peserta yang sesuai dengan pencarian Anda.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       JAVASCRIPT MERGED LOGIC
+       ========================================================================= -->
+  <script>
+    // State lists
+    let joinedParticipants = [];
+    let notJoinedParticipants = [];
+    let allParticipantsMerged = [];
+    
+    let currentTab = 'monitor'; // 'monitor' or 'admin'
+    
+    // DOM Cache
+    const loader = document.getElementById('loader');
+    const searchInput = document.getElementById('search-input');
+    const filterStatus = document.getElementById('filter-status');
+    const tableBody = document.getElementById('table-body');
+    const emptyStateTable = document.getElementById('empty-state-table');
+
+    const els = {
+      registered: document.getElementById('stat-registered'),
+      present: document.getElementById('stat-present'),
+      absent: document.getElementById('stat-absent'),
+      ots: document.getElementById('stat-ots'),
+      pct: document.getElementById('stat-pct'),
+      progressBar: document.getElementById('progress-bar'),
+      badgeJoined: document.getElementById('badge-joined'),
+      badgeNotJoined: document.getElementById('badge-notjoined'),
+      listJoined: document.getElementById('list-joined'),
+      listNotJoined: document.getElementById('list-notjoined')
+    };
+
+    /**
+     * Initial Load Setup
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      // Configuration Bind
+      document.title = "Dashboard & Admin - " + WEBINAR_CONFIG.WEBINAR_TITLE;
+      document.getElementById('dashboard-webinar-title').textContent = WEBINAR_CONFIG.WEBINAR_TITLE;
+      
+      // Load Data
+      fetchData();
+      
+      // Auto-refresh setiap 30 detik untuk monitor proyektor publik
+      setInterval(fetchData, 30000);
+    });
+
+    /**
+     * Tab Switcher Handler
+     */
+    function switchTab(tabName) {
+      currentTab = tabName;
+      
+      // Toggle button active state
+      document.getElementById('tab-monitor-btn').classList.toggle('active', tabName === 'monitor');
+      document.getElementById('tab-admin-btn').classList.toggle('active', tabName === 'admin');
+      
+      // Toggle content panel
+      document.getElementById('view-monitor').classList.toggle('active', tabName === 'monitor');
+      document.getElementById('view-admin').classList.toggle('active', tabName === 'admin');
+      
+      // Show/hide status filter dropdown
+      filterStatus.style.display = tabName === 'admin' ? 'block' : 'none';
+      
+      applyFilterAndSearch();
+    }
+
+    /**
+     * Retrieve Data from GAS API
+     */
+    function fetchData() {
+      loader.classList.add('active');
+      
+      if (!WEBINAR_CONFIG.API_URL || WEBINAR_CONFIG.API_URL.includes("AKfycbxxxxxxxxx")) {
+        console.warn("API_URL is not configured yet in config.js");
+        loader.classList.remove('active');
+        return;
+      }
+
+      fetch(WEBINAR_CONFIG.API_URL, {
+        method: "POST",
+        mode: "cors",
+        redirect: "follow",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify({
+          action: "getDashboard"
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("API merespon dengan status " + response.status);
+        }
+        return response.json();
+      })
+      .then(data => onFetchSuccess(data))
+      .catch(error => onFetchFailure(error));
+    }
+
+    function onFetchSuccess(response) {
+      loader.classList.remove('active');
+      
+      if (response.status === 'success') {
+        const stats = response.stats;
+        const totalAbsent = stats.totalRegistered - stats.totalPresent;
+        
+        // Populate stats KPI
+        els.registered.textContent = stats.totalRegistered;
+        els.present.textContent = stats.totalPresent;
+        els.absent.textContent = totalAbsent >= 0 ? totalAbsent : 0;
+        els.ots.textContent = stats.totalOTS;
+        els.pct.textContent = stats.pctPresent + '%';
+        els.progressBar.style.width = stats.pctPresent + '%';
+        
+        // Save to state
+        joinedParticipants = response.presentList;
+        notJoinedParticipants = response.absentList;
+        
+        // Pre-compile merged list for detailed admin table
+        allParticipantsMerged = [];
+        joinedParticipants.forEach(p => {
+          allParticipantsMerged.push({
+            name: p.name,
+            email: p.email,
+            type: p.type === 'OTS' ? 'OTS' : 'Reguler',
+            time: p.time || '-',
+            status: p.type === 'OTS' ? 'HADIR (OTS)' : 'HADIR'
+          });
+        });
+        notJoinedParticipants.forEach(p => {
+          allParticipantsMerged.push({
+            name: p.name,
+            email: p.email,
+            type: p.type === 'OTS' ? 'OTS' : 'Reguler',
+            time: '-',
+            status: 'BELUM HADIR'
+          });
+        });
+        
+        // Sorting: Present first, alphabetical by name
+        allParticipantsMerged.sort((a, b) => {
+          if (a.status !== 'BELUM HADIR' && b.status === 'BELUM HADIR') return -1;
+          if (a.status === 'BELUM HADIR' && b.status !== 'BELUM HADIR') return 1;
+          return a.name.localeCompare(b.name);
+        });
+        
+        applyFilterAndSearch();
+      }
+    }
+
+    function onFetchFailure(error) {
+      loader.classList.remove('active');
+      console.error('Koneksi database API terputus:', error);
+    }
+
+    /**
+     * Unified Filter and Search Engine
+     */
+    function applyFilterAndSearch() {
+      const query = searchInput.value.trim().toLowerCase();
+      
+      if (currentTab === 'monitor') {
+        // Tab 1: Live Monitor lists filter
+        const filteredJoined = joinedParticipants.filter(p => 
+          p.name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query)
+        );
+        const filteredNotJoined = notJoinedParticipants.filter(p => 
+          p.name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query)
+        );
+        
+        renderMonitorLists(filteredJoined, filteredNotJoined);
+      } else {
+        // Tab 2: Admin Detailed Table filter
+        const statusVal = filterStatus.value;
+        const filteredTable = allParticipantsMerged.filter(p => {
+          const matchQuery = p.name.toLowerCase().includes(query) || 
+                             p.email.toLowerCase().includes(query);
+                             
+          let matchStatus = true;
+          if (statusVal === 'hadir') {
+            matchStatus = p.status !== 'BELUM HADIR';
+          } else if (statusVal === 'hadir-reg') {
+            matchStatus = p.status === 'HADIR';
+          } else if (statusVal === 'hadir-ots') {
+            matchStatus = p.status === 'HADIR (OTS)';
+          } else if (statusVal === 'belum') {
+            matchStatus = p.status === 'BELUM HADIR';
+          }
+          
+          return matchQuery && matchStatus;
+        });
+        
+        renderAdminTable(filteredTable);
+      }
+    }
+
+    /**
+     * Render Tab 1 (Monitor Columns)
+     */
+    function renderMonitorLists(joined, notJoined) {
+      els.badgeJoined.textContent = joined.length;
+      els.badgeNotJoined.textContent = notJoined.length;
+      
+      els.listJoined.innerHTML = '';
+      els.listNotJoined.innerHTML = '';
+      
+      // Render joined
+      if (joined.length === 0) {
+        els.listJoined.innerHTML = '<div class="empty-text">Tidak ada peserta cocok.</div>';
+      } else {
+        joined.forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'participant-row';
+          
+          const isOTS = p.type === 'OTS' || p.status.includes('OTS');
+          const otsTag = isOTS ? `<span class="part-badge-ots">OTS</span>` : '';
+          const cleanTime = p.time.split(' ')[3] || p.time;
+          
+          row.innerHTML = `
+            <div class="part-info">
+              <span class="part-name">${p.name}${otsTag}</span>
+              <span class="part-email">${p.email}</span>
+            </div>
+            <span class="time-badge">${cleanTime}</span>
+          `;
+          els.listJoined.appendChild(row);
+        });
+      }
+      
+      // Render not joined
+      if (notJoined.length === 0) {
+        els.listNotJoined.innerHTML = '<div class="empty-text">Semua peserta terdaftar telah hadir!</div>';
+      } else {
+        notJoined.forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'participant-row';
+          row.innerHTML = `
+            <div class="part-info">
+              <span class="part-name" style="color: var(--text-main); font-weight: 500;">${p.name}</span>
+              <span class="part-email">${p.email}</span>
+            </div>
+            <span class="status-absent-label">Belum Join</span>
+          `;
+          els.listNotJoined.appendChild(row);
+        });
+      }
+    }
+
+    /**
+     * Render Tab 2 (Detailed Admin Table)
+     */
+    function renderAdminTable(data) {
+      tableBody.innerHTML = '';
+      
+      if (data.length === 0) {
+        emptyStateTable.style.display = 'block';
+        return;
+      }
+      
+      emptyStateTable.style.display = 'none';
+      
+      data.forEach((p, index) => {
+        let statusBadge = '';
+        if (p.status === 'HADIR') {
+          statusBadge = `<span class="badge badge-present">Hadir</span>`;
+        } else if (p.status === 'HADIR (OTS)') {
+          statusBadge = `<span class="badge badge-ots">Hadir (OTS)</span>`;
+        } else {
+          statusBadge = `<span class="badge badge-absent">Belum Hadir</span>`;
+        }
+        
+        const typeBadge = p.type === 'OTS' 
+          ? `<span class="badge badge-type-ots">OTS</span>`
+          : `<span class="badge badge-type-reg" style="background: #f1f5f9; color: var(--text-light); border: 1px solid #cbd5e1;">Reguler</span>`;
+          
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: center; color: var(--text-light);">${index + 1}</td>
+          <td style="font-weight: 500;">${p.name}</td>
+          <td style="color: var(--text-light);">${p.email}</td>
+          <td>${typeBadge}</td>
+          <td style="color: var(--text-light); font-size: 0.8rem;">${p.time}</td>
+          <td>${statusBadge}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
