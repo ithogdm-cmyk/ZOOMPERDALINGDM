@@ -238,13 +238,15 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
       }
     }
     
-    // Tahap 2: Isi ID kosong dengan format berurutan
+    // Tahap 2: Isi ID kosong dengan format berurutan (HANYA jika baris tersebut berisi data nama/email valid)
     const idValues = [];
     for (let i = 1; i < regLastRow; i++) {
       let currentId = String(allData[i][idCol - 1] || "").trim();
+      const emailVal = emailCol !== -1 ? String(allData[i][emailCol - 1] || "").trim() : "";
+      const nameVal = nameCol !== -1 ? String(allData[i][nameCol - 1] || "").trim() : "";
       const statusType = statusCol !== -1 ? String(allData[i][statusCol - 1] || "").trim().toUpperCase() : "";
       
-      if (currentId === "" || currentId === "0" || currentId === "0.0") {
+      if ((currentId === "" || currentId === "0" || currentId === "0.0") && (emailVal || nameVal) && nameVal !== "0" && nameVal !== "0.0") {
         if (statusType.includes("OTS")) {
           otsCount++;
           currentId = "OTS" + ("000" + otsCount).slice(-3);
