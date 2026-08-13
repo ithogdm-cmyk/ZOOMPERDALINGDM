@@ -15,7 +15,7 @@
 const CONFIG = {
   REGISTRATION_SHEET_NAME: "RAW",
   ATTENDANCE_SHEET_NAME: "Kehadiran",
-  SPREADSHEET_ID: "", // Kosongkan jika script di-bind langsung ke Spreadsheet
+  SPREADSHEET_ID: "1fEzzdCOt4Gof-ZUmgW6Px_EjdJ1jkJKH0-8eUsEES9o", // ID Spreadsheet pendaftaran & absensi Anda
   ADMIN_PASSWORD: "#GDMPERDALIN26" // Password default untuk masuk ke dashboard admin
 };
 
