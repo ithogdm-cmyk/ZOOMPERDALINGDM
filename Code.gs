@@ -59,8 +59,8 @@ function doPost(e) {
       } else {
         result = getDashboardData();
       }
-    } else if (action === "debugSheets") {
-      result = debugSheetsList();
+    } else if (action === "resetData") {
+      result = resetSpreadsheetData();
     } else {
       result = { status: "error", message: "Aksi '" + action + "' tidak dikenali oleh API." };
     }
@@ -189,7 +189,7 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
     const header = String(headers[i]).toLowerCase().trim();
     if (header.includes("email")) {
       emailCol = i + 1;
-    } else if (header.includes("nama") || header.includes("name") || header.includes("fullname") || header === "nama peserta" || header === "nama_peserta") {
+    } else if (header === "nama" || header === "name" || header === "nama lengkap" || header === "fullname" || header === "nama peserta" || header === "nama_peserta" || header === "peserta") {
       nameCol = i + 1;
     } else if (header.includes("tel") || header.includes("hp") || header.includes("phone") || header.includes("wa")) {
       phoneCol = i + 1;
@@ -706,32 +706,40 @@ function generateNextOtsId(regSheet, regCols, regLastRow) {
   return "OTS" + formattedNumber;
 }
 
-function debugSheetsList() {
+function resetSpreadsheetData() {
   const ss = getSpreadsheet();
-  const sheets = ss.getSheets();
-  const list = [];
   
-  for (let i = 0; i < sheets.length; i++) {
-    const sheet = sheets[i];
-    const name = sheet.getName();
-    const lastRow = sheet.getLastRow();
-    const lastCol = sheet.getLastColumn();
-    
-    let sample = [];
-    if (lastRow > 0 && lastCol > 0) {
-      sample = sheet.getRange(1, 1, Math.min(lastRow, 3), lastCol).getValues();
-    }
-    
-    list.push({
-      name: name,
-      rows: lastRow,
-      cols: lastCol,
-      sample: sample
-    });
+  // 1. Bersihkan sheet RAW (hapus kolom 13 ke kanan secara hati-hati)
+  const regSheet = getRegistrationSheet(ss);
+  const regLastCol = regSheet.getLastColumn();
+  if (regLastCol > 12) {
+    regSheet.deleteColumns(13, regLastCol - 12);
   }
+  
+  // 2. Bersihkan sheet Kehadiran (kosongkan semua baris setelah header)
+  const attSheet = getAttendanceSheet(ss);
+  const attLastRow = attSheet.getLastRow();
+  if (attLastRow >= 2) {
+    attSheet.deleteRows(2, attLastRow - 1);
+  }
+  
+  // 3. Tambahkan kolom "Tipe Registrasi" di kolom 13 secara bersih jika belum ada di 12 kolom pertama
+  const headers = regSheet.getRange(1, 1, 1, 12).getValues()[0];
+  let statusColExists = false;
+  for (let i = 0; i < headers.length; i++) {
+    const header = String(headers[i]).toLowerCase().trim();
+    if (header.includes("tipe") || header.includes("kategori") || header.includes("status pendaftaran") || header.includes("registrasi")) {
+      statusColExists = true;
+    }
+  }
+  if (!statusColExists) {
+    regSheet.getRange(1, 13).setValue("Tipe Registrasi");
+  }
+  
+  SpreadsheetApp.flush();
   
   return {
     status: "success",
-    sheets: list
+    message: "Spreadsheet dan data kehadiran berhasil di-reset dengan bersih!"
   };
 }
