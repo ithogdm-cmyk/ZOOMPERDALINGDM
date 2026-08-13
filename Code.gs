@@ -59,8 +59,6 @@ function doPost(e) {
       } else {
         result = getDashboardData();
       }
-    } else if (action === "debugSheet") {
-      result = debugSheetData();
     } else {
       result = { status: "error", message: "Aksi '" + action + "' tidak dikenali oleh API." };
     }
@@ -291,12 +289,12 @@ function getRegistrationColumnIndicesAndPrepare(sheet) {
 /**
  * Memeriksa status pendaftaran di sheet 'RAW' dan status kehadiran di sheet 'Kehadiran'
  */
-function checkParticipant(email) {
-  if (!email) {
-    return { status: "error", message: "Email tidak boleh kosong." };
+function checkParticipant(identifier) {
+  if (!identifier) {
+    return { status: "error", message: "ID Peserta atau Email tidak boleh kosong." };
   }
   
-  email = email.trim().toLowerCase();
+  identifier = identifier.trim().toLowerCase();
   const ss = getSpreadsheet();
   
   // 1. Validasi Pendaftaran di sheet 'RAW'
@@ -311,22 +309,26 @@ function checkParticipant(email) {
   const regData = regSheet.getRange(2, 1, regLastRow - 1, regSheet.getLastColumn()).getValues();
   let name = "";
   let id = "";
+  let email = "";
   let isRegistered = false;
   
   for (let i = 0; i < regData.length; i++) {
     const row = regData[i];
-    const rowEmail = String(row[regCols.emailCol - 1]).trim().toLowerCase();
-    const rowName = String(row[regCols.nameCol - 1]).trim();
-    if (rowEmail === email && rowName && rowName !== "0" && rowName !== "0.0") {
+    const rowId = String(row[regCols.idCol - 1] || "").trim().toLowerCase();
+    const rowEmail = String(row[regCols.emailCol - 1] || "").trim().toLowerCase();
+    const rowName = String(row[regCols.nameCol - 1] || "").trim();
+    
+    if ((rowId === identifier || rowEmail === identifier) && rowName && rowName !== "0" && rowName !== "0.0") {
       name = rowName;
       id = String(row[regCols.idCol - 1] || "").trim();
+      email = String(row[regCols.emailCol - 1] || "").trim();
       isRegistered = true;
       break;
     }
   }
   
   if (!isRegistered) {
-    return { status: "not_found", message: "Email Anda belum terdaftar." };
+    return { status: "not_found", message: "ID Peserta atau Email Anda tidak terdaftar." };
   }
   
   // 2. Cek status absensi di sheet 'Kehadiran'
@@ -368,12 +370,12 @@ function checkParticipant(email) {
 /**
  * Mencatat kehadiran peserta reguler ke sheet 'Kehadiran'
  */
-function recordAttendance(email) {
-  if (!email) {
-    return { status: "error", message: "Email tidak boleh kosong." };
+function recordAttendance(identifier) {
+  if (!identifier) {
+    return { status: "error", message: "ID Peserta atau Email tidak boleh kosong." };
   }
   
-  email = email.trim().toLowerCase();
+  identifier = identifier.trim().toLowerCase();
   const ss = getSpreadsheet();
   
   // 1. Ambil Nama dan ID dari data pendaftaran 'RAW'
@@ -383,17 +385,20 @@ function recordAttendance(email) {
   
   let name = "";
   let id = "";
+  let email = "";
   let isRegistered = false;
   
   if (regLastRow >= 2) {
     const regData = regSheet.getRange(2, 1, regLastRow - 1, regSheet.getLastColumn()).getValues();
     for (let i = 0; i < regData.length; i++) {
       const row = regData[i];
-      const rowEmail = String(row[regCols.emailCol - 1]).trim().toLowerCase();
+      const rowId = String(row[regCols.idCol - 1] || "").trim().toLowerCase();
+      const rowEmail = String(row[regCols.emailCol - 1] || "").trim().toLowerCase();
       const rowName = String(row[regCols.nameCol - 1]).trim();
-      if (rowEmail === email && rowName && rowName !== "0" && rowName !== "0.0") {
+      if ((rowId === identifier || rowEmail === identifier) && rowName && rowName !== "0" && rowName !== "0.0") {
         name = rowName;
         id = String(row[regCols.idCol - 1] || "").trim();
+        email = String(row[regCols.emailCol - 1] || "").trim();
         isRegistered = true;
         break;
       }
@@ -401,7 +406,7 @@ function recordAttendance(email) {
   }
   
   if (!isRegistered) {
-    return { status: "error", message: "Email pendaftaran tidak ditemukan." };
+    return { status: "error", message: "ID Peserta atau Email pendaftaran tidak ditemukan." };
   }
   
   // 2. Cek double-submit di sheet 'Kehadiran' berdasarkan ID
@@ -528,7 +533,8 @@ function getDashboardData() {
       const name = String(row[regCols.nameCol - 1] || "").trim();
       const statusType = regCols.statusCol !== -1 ? String(row[regCols.statusCol - 1] || "REGULER").trim() : "REGULER";
       
-      if (email && name && name !== "0" && name !== "0.0") {
+      // Cukup ada ID ATAU Email yang terisi, serta nama valid, maka dianggap peserta sah
+      if ((id || email) && name && name !== "0" && name !== "0.0") {
         registrants.push({
           id: id,
           email: email,
@@ -696,35 +702,4 @@ function generateNextOtsId(regSheet, regCols, regLastRow) {
   const nextOtsNumber = maxOtsNumber + 1;
   const formattedNumber = ("000" + nextOtsNumber).slice(-3); // Minimal 3 digit, misal OTS001
   return "OTS" + formattedNumber;
-}
-
-function debugSheetData() {
-  const ss = getSpreadsheet();
-  const regSheet = getRegistrationSheet(ss);
-  const lastCol = regSheet.getLastColumn();
-  const lastRow = regSheet.getLastRow();
-  
-  const headers = regSheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  
-  // Ambil baris-baris pertama (sampai 15)
-  const limit = Math.min(lastRow, 15);
-  const startValues = regSheet.getRange(1, 1, limit, lastCol).getValues();
-  
-  // Ambil beberapa baris dari tengah/lokasi PPI
-  const middleStart = Math.max(2, Math.floor(lastRow / 2) - 5);
-  const middleLimit = Math.min(lastRow - middleStart, 10);
-  let middleValues = [];
-  if (lastRow > 15 && middleLimit > 0) {
-    middleValues = regSheet.getRange(middleStart, 1, middleLimit, lastCol).getValues();
-  }
-  
-  return {
-    status: "success",
-    totalRows: lastRow,
-    totalCols: lastCol,
-    headers: headers,
-    sampleStart: startValues,
-    middleStartRow: middleStart,
-    sampleMiddle: middleValues
-  };
 }
