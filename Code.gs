@@ -59,6 +59,8 @@ function doPost(e) {
       } else {
         result = getDashboardData();
       }
+    } else if (action === "debugSheets") {
+      result = debugSheetsList();
     } else {
       result = { status: "error", message: "Aksi '" + action + "' tidak dikenali oleh API." };
     }
@@ -702,4 +704,34 @@ function generateNextOtsId(regSheet, regCols, regLastRow) {
   const nextOtsNumber = maxOtsNumber + 1;
   const formattedNumber = ("000" + nextOtsNumber).slice(-3); // Minimal 3 digit, misal OTS001
   return "OTS" + formattedNumber;
+}
+
+function debugSheetsList() {
+  const ss = getSpreadsheet();
+  const sheets = ss.getSheets();
+  const list = [];
+  
+  for (let i = 0; i < sheets.length; i++) {
+    const sheet = sheets[i];
+    const name = sheet.getName();
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+    
+    let sample = [];
+    if (lastRow > 0 && lastCol > 0) {
+      sample = sheet.getRange(1, 1, Math.min(lastRow, 3), lastCol).getValues();
+    }
+    
+    list.push({
+      name: name,
+      rows: lastRow,
+      cols: lastCol,
+      sample: sample
+    });
+  }
+  
+  return {
+    status: "success",
+    sheets: list
+  };
 }
