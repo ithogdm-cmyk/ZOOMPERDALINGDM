@@ -755,11 +755,9 @@ function resetSpreadsheetData() {
     pesSheet = ss.insertSheet(CONFIG.PESERTA_SHEET_NAME);
   }
   pesSheet.clear();
-  // Gunakan rumus cermin kolom dari RAW
-  pesSheet.getRange(1, 1).setValue("=RAW!A:A"); // ID
-  pesSheet.getRange(1, 2).setValue("=RAW!C:C"); // Nama
-  pesSheet.getRange(1, 3).setValue("=RAW!F:F"); // Email
-  pesSheet.getRange(1, 4).setValue("=RAW!M:M"); // Tipe Registrasi (Kolom 13)
+  // Gunakan formula QUERY untuk menyalin data secara dinamis dari RAW (hanya kolom ID, Nama, Email, Kategori)
+  // Ini menghindari pembacaan data kolom yang kotor dan mempercepat load time
+  pesSheet.getRange(1, 1).setValue('=QUERY(RAW!A:M, "SELECT A, C, F, M WHERE A IS NOT NULL", 1)');
   
   SpreadsheetApp.flush();
   
