@@ -62,6 +62,8 @@ function doPost(e) {
       }
     } else if (action === "resetData") {
       result = resetSpreadsheetData();
+    } else if (action === "debugPeserta") {
+      result = debugPesertaSheet();
     } else {
       result = { status: "error", message: "Aksi '" + action + "' tidak dikenali oleh API." };
     }
@@ -764,5 +766,34 @@ function resetSpreadsheetData() {
   return {
     status: "success",
     message: "Spreadsheet, data kehadiran, dan sheet cermin baca cepat PESERTA berhasil di-reset dengan bersih!"
+  };
+}
+
+function debugPesertaSheet() {
+  const ss = getSpreadsheet();
+  const pesSheet = ss.getSheetByName(CONFIG.PESERTA_SHEET_NAME);
+  if (!pesSheet) {
+    return { status: "error", message: "Sheet PESERTA tidak ditemukan." };
+  }
+  
+  const lastRow = pesSheet.getLastRow();
+  const lastCol = pesSheet.getLastColumn();
+  
+  let values = [];
+  if (lastRow > 0 && lastCol > 0) {
+    values = pesSheet.getRange(1, 1, Math.min(lastRow, 10), lastCol).getValues();
+  }
+  
+  let formulas = [];
+  if (lastRow > 0 && lastCol > 0) {
+    formulas = pesSheet.getRange(1, 1, 1, lastCol).getFormulas();
+  }
+  
+  return {
+    status: "success",
+    rows: lastRow,
+    cols: lastCol,
+    formulas: formulas,
+    sample: values
   };
 }
