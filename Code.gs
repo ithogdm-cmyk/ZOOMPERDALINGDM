@@ -13,7 +13,8 @@
  */
 
 const CONFIG = {
-  REGISTRATION_SHEET_NAME: "RAW",
+  PESERTA_SHEET_NAME: "PESERTA", // Membaca data cepat dari PESERTA (4 kolom hasil cermin)
+  RAW_SHEET_NAME: "RAW", // Menulis pendaftaran OTS baru ke RAW
   ATTENDANCE_SHEET_NAME: "Kehadiran",
   SPREADSHEET_ID: "1fEzzdCOt4Gof-ZUmgW6Px_EjdJ1jkJKH0-8eUsEES9o", // ID Spreadsheet pendaftaran & absensi Anda
   ADMIN_PASSWORD: "#GDMPERDALIN26" // Password default untuk masuk ke dashboard admin
@@ -94,9 +95,17 @@ function getSpreadsheet() {
  * Mendapatkan objek Sheet Pendaftaran (RAW)
  */
 function getRegistrationSheet(ss) {
-  const sheet = ss.getSheetByName(CONFIG.REGISTRATION_SHEET_NAME);
+  const sheet = ss.getSheetByName(CONFIG.RAW_SHEET_NAME);
   if (!sheet) {
-    throw new Error("Sheet pendaftaran '" + CONFIG.REGISTRATION_SHEET_NAME + "' tidak ditemukan.");
+    throw new Error("Sheet pendaftaran '" + CONFIG.RAW_SHEET_NAME + "' tidak ditemukan.");
+  }
+  return sheet;
+}
+
+function getPesertaSheet(ss) {
+  const sheet = ss.getSheetByName(CONFIG.PESERTA_SHEET_NAME);
+  if (!sheet) {
+    throw new Error("Sheet pembacaan cepat '" + CONFIG.PESERTA_SHEET_NAME + "' tidak ditemukan. Silakan buat sheet '" + CONFIG.PESERTA_SHEET_NAME + "' terlebih dahulu.");
   }
   return sheet;
 }
@@ -150,7 +159,7 @@ function getAttendanceSheet(ss) {
 function getRegistrationColumnIndicesAndPrepare(sheet) {
   const lastCol = sheet.getLastColumn();
   if (lastCol === 0) {
-    throw new Error("Sheet pendaftaran '" + CONFIG.REGISTRATION_SHEET_NAME + "' kosong.");
+    throw new Error("Sheet pendaftaran '" + CONFIG.RAW_SHEET_NAME + "' kosong.");
   }
   
   // Baca seluruh data sheet pendaftaran dalam 1 panggilan API saja!
@@ -299,16 +308,15 @@ function checkParticipant(identifier) {
   identifier = identifier.trim().toLowerCase();
   const ss = getSpreadsheet();
   
-  // 1. Validasi Pendaftaran di sheet 'RAW'
-  const regSheet = getRegistrationSheet(ss);
-  const regCols = getRegistrationColumnIndicesAndPrepare(regSheet);
-  const regLastRow = regSheet.getLastRow();
+  // 1. Validasi Pendaftaran di sheet 'PESERTA' (baca cepat)
+  const pesSheet = getPesertaSheet(ss);
+  const regLastRow = pesSheet.getLastRow();
   
   if (regLastRow < 2) {
     return { status: "not_found", message: "Database pendaftaran kosong." };
   }
   
-  const regData = regSheet.getRange(2, 1, regLastRow - 1, regSheet.getLastColumn()).getValues();
+  const regData = pesSheet.getRange(2, 1, regLastRow - 1, 4).getValues(); // 4 kolom: ID, Nama, Email, Tipe
   let name = "";
   let id = "";
   let email = "";
@@ -316,14 +324,14 @@ function checkParticipant(identifier) {
   
   for (let i = 0; i < regData.length; i++) {
     const row = regData[i];
-    const rowId = String(row[regCols.idCol - 1] || "").trim().toLowerCase();
-    const rowEmail = String(row[regCols.emailCol - 1] || "").trim().toLowerCase();
-    const rowName = String(row[regCols.nameCol - 1] || "").trim();
+    const rowId = String(row[0] || "").trim().toLowerCase();
+    const rowName = String(row[1] || "").trim();
+    const rowEmail = String(row[2] || "").trim().toLowerCase();
     
     if ((rowId === identifier || rowEmail === identifier) && rowName && rowName !== "0" && rowName !== "0.0") {
       name = rowName;
-      id = String(row[regCols.idCol - 1] || "").trim();
-      email = String(row[regCols.emailCol - 1] || "").trim();
+      id = String(row[0] || "").trim();
+      email = String(row[2] || "").trim();
       isRegistered = true;
       break;
     }
@@ -380,10 +388,9 @@ function recordAttendance(identifier) {
   identifier = identifier.trim().toLowerCase();
   const ss = getSpreadsheet();
   
-  // 1. Ambil Nama dan ID dari data pendaftaran 'RAW'
-  const regSheet = getRegistrationSheet(ss);
-  const regCols = getRegistrationColumnIndicesAndPrepare(regSheet);
-  const regLastRow = regSheet.getLastRow();
+  // 1. Ambil Nama dan ID dari data pendaftaran 'PESERTA'
+  const pesSheet = getPesertaSheet(ss);
+  const regLastRow = pesSheet.getLastRow();
   
   let name = "";
   let id = "";
@@ -391,16 +398,17 @@ function recordAttendance(identifier) {
   let isRegistered = false;
   
   if (regLastRow >= 2) {
-    const regData = regSheet.getRange(2, 1, regLastRow - 1, regSheet.getLastColumn()).getValues();
+    const regData = pesSheet.getRange(2, 1, regLastRow - 1, 4).getValues(); // 4 kolom: ID, Nama, Email, Tipe
     for (let i = 0; i < regData.length; i++) {
       const row = regData[i];
-      const rowId = String(row[regCols.idCol - 1] || "").trim().toLowerCase();
-      const rowEmail = String(row[regCols.emailCol - 1] || "").trim().toLowerCase();
-      const rowName = String(row[regCols.nameCol - 1]).trim();
+      const rowId = String(row[0] || "").trim().toLowerCase();
+      const rowName = String(row[1] || "").trim();
+      const rowEmail = String(row[2] || "").trim().toLowerCase();
+      
       if ((rowId === identifier || rowEmail === identifier) && rowName && rowName !== "0" && rowName !== "0.0") {
         name = rowName;
-        id = String(row[regCols.idCol - 1] || "").trim();
-        email = String(row[regCols.emailCol - 1] || "").trim();
+        id = String(row[0] || "").trim();
+        email = String(row[2] || "").trim();
         isRegistered = true;
         break;
       }
@@ -518,11 +526,9 @@ function getDashboardData() {
   const ss = getSpreadsheet();
   const tSS = new Date().getTime();
   
-  // 1. Ambil data pendaftaran (RAW)
-  const regSheet = getRegistrationSheet(ss);
-  const regCols = getRegistrationColumnIndicesAndPrepare(regSheet);
-  
-  const allRegData = regSheet.getDataRange().getValues();
+  // 1. Ambil data pendaftaran (PESERTA - 4 kolom)
+  const pesSheet = getPesertaSheet(ss);
+  const allRegData = pesSheet.getDataRange().getValues();
   const regLastRow = allRegData.length;
   const tRegInfo = new Date().getTime();
   
@@ -530,10 +536,10 @@ function getDashboardData() {
   if (regLastRow >= 2) {
     for (let i = 1; i < regLastRow; i++) {
       const row = allRegData[i];
-      const id = String(row[regCols.idCol - 1] || "").trim();
-      const email = String(row[regCols.emailCol - 1] || "").trim().toLowerCase();
-      const name = String(row[regCols.nameCol - 1] || "").trim();
-      const statusType = regCols.statusCol !== -1 ? String(row[regCols.statusCol - 1] || "REGULER").trim() : "REGULER";
+      const id = String(row[0] || "").trim();
+      const name = String(row[1] || "").trim();
+      const email = String(row[2] || "").trim().toLowerCase();
+      const statusType = String(row[3] || "REGULER").trim();
       
       // Cukup ada ID ATAU Email yang terisi, serta nama valid, maka dianggap peserta sah
       if ((id || email) && name && name !== "0" && name !== "0.0") {
@@ -709,22 +715,15 @@ function generateNextOtsId(regSheet, regCols, regLastRow) {
 function resetSpreadsheetData() {
   const ss = getSpreadsheet();
   
-  // 1. Bersihkan sheet RAW (hapus kolom 13 ke kanan secara hati-hati)
+  // 1. Bersihkan sheet RAW (hapus kolom 14 ke kanan secara hati-hati, karena kolom 13 adalah Tipe Registrasi)
   const regSheet = getRegistrationSheet(ss);
-  const regLastCol = regSheet.getLastColumn();
-  if (regLastCol > 12) {
-    regSheet.deleteColumns(13, regLastCol - 12);
-  }
   
-  // 2. Bersihkan sheet Kehadiran (kosongkan semua baris setelah header)
-  const attSheet = getAttendanceSheet(ss);
-  const attLastRow = attSheet.getLastRow();
-  if (attLastRow >= 2) {
-    attSheet.deleteRows(2, attLastRow - 1);
+  // Tambahkan kolom "Tipe Registrasi" di kolom 13 secara bersih jika belum ada di 12 kolom pertama
+  const lastColCheck = Math.min(regSheet.getLastColumn(), 12);
+  let headers = [];
+  if (lastColCheck > 0) {
+    headers = regSheet.getRange(1, 1, 1, lastColCheck).getValues()[0];
   }
-  
-  // 3. Tambahkan kolom "Tipe Registrasi" di kolom 13 secara bersih jika belum ada di 12 kolom pertama
-  const headers = regSheet.getRange(1, 1, 1, 12).getValues()[0];
   let statusColExists = false;
   for (let i = 0; i < headers.length; i++) {
     const header = String(headers[i]).toLowerCase().trim();
@@ -735,11 +734,35 @@ function resetSpreadsheetData() {
   if (!statusColExists) {
     regSheet.getRange(1, 13).setValue("Tipe Registrasi");
   }
+
+  const regLastCol = regSheet.getLastColumn();
+  if (regLastCol > 13) {
+    regSheet.deleteColumns(14, regLastCol - 13);
+  }
+  
+  // 2. Bersihkan sheet Kehadiran (kosongkan semua baris setelah header)
+  const attSheet = getAttendanceSheet(ss);
+  const attLastRow = attSheet.getLastRow();
+  if (attLastRow >= 2) {
+    attSheet.deleteRows(2, attLastRow - 1);
+  }
+
+  // 3. Buat dan Inisialisasi sheet PESERTA dengan rumus cermin agar performa baca super cepat
+  let pesSheet = ss.getSheetByName(CONFIG.PESERTA_SHEET_NAME);
+  if (!pesSheet) {
+    pesSheet = ss.insertSheet(CONFIG.PESERTA_SHEET_NAME);
+  }
+  pesSheet.clear();
+  // Gunakan rumus cermin kolom dari RAW
+  pesSheet.getRange(1, 1).setValue("=RAW!A:A"); // ID
+  pesSheet.getRange(1, 2).setValue("=RAW!C:C"); // Nama
+  pesSheet.getRange(1, 3).setValue("=RAW!F:F"); // Email
+  pesSheet.getRange(1, 4).setValue("=RAW!M:M"); // Tipe Registrasi (Kolom 13)
   
   SpreadsheetApp.flush();
   
   return {
     status: "success",
-    message: "Spreadsheet dan data kehadiran berhasil di-reset dengan bersih!"
+    message: "Spreadsheet, data kehadiran, dan sheet cermin baca cepat PESERTA berhasil di-reset dengan bersih!"
   };
 }
