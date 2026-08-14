@@ -757,7 +757,7 @@ function resetSpreadsheetData() {
   pesSheet.clear();
   // Gunakan formula QUERY untuk menyalin data secara dinamis dari RAW (hanya kolom ID, Nama, Email, Kategori)
   // Ini menghindari pembacaan data kolom yang kotor dan mempercepat load time
-  pesSheet.getRange(1, 1).setValue('=QUERY(RAW!A:M, "SELECT A, C, F, M WHERE A IS NOT NULL", 1)');
+  pesSheet.getRange(1, 1).setFormula('=QUERY(RAW!A:M, "SELECT A, C, F, M WHERE A IS NOT NULL", 1)');
   
   SpreadsheetApp.flush();
   
