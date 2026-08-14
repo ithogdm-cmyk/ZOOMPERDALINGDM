@@ -13,13 +13,13 @@
        DARK PREMIUM DESIGN SYSTEM
        ========================================================================= */
     :root {
-      --bg-dark: #0f172a; /* Slate 900 */
-      --bg-card: #1e293b; /* Slate 800 */
-      --primary: #10b981; /* Emerald */
-      --primary-glow: rgba(16, 185, 129, 0.15);
-      --border-color: #334155; /* Slate 700 */
-      --text-main: #f8fafc; /* Slate 50 */
-      --text-muted: #94a3b8; /* Slate 400 */
+      --bg-dark: #f3ebf6; /* Ungu/Lavender Pastel sesuai contoh gambar */
+      --bg-card: #ffffff; /* White Card */
+      --primary: #7c3aed; /* Violet/Purple */
+      --primary-glow: rgba(124, 58, 237, 0.15);
+      --border-color: #e5def0; /* Light Purple Border */
+      --text-main: #1e1b4b; /* Deep Indigo/Navy */
+      --text-muted: #7c7a90; /* Lavender Gray */
       --gold: #f59e0b;
       --silver: #94a3b8;
       --bronze: #d97706;
@@ -63,10 +63,10 @@
       justify-content: center;
       gap: 24px;
       margin-bottom: 24px;
-      background-color: rgba(255, 255, 255, 0.03);
+      background-color: rgba(255, 255, 255, 0.8);
       padding: 16px 32px;
       border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
       backdrop-filter: blur(10px);
       width: fit-content;
       margin-left: auto;
@@ -91,9 +91,7 @@
       letter-spacing: -0.03em;
       line-height: 1.2;
       margin-bottom: 8px;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--text-main);
     }
 
     .badge-live {
@@ -244,7 +242,7 @@
     }
 
     .list-row.header {
-      background-color: rgba(255, 255, 255, 0.02);
+      background-color: #f8fafc;
       font-weight: 700;
       color: var(--text-muted);
       font-size: 0.8rem;
@@ -254,7 +252,7 @@
     }
 
     .list-row:not(.header):hover {
-      background-color: rgba(255, 255, 255, 0.01);
+      background-color: rgba(124, 58, 237, 0.03);
     }
 
     .col-rank {
