@@ -1004,9 +1004,19 @@ function syncCocokData() {
     return;
   }
   
-  const rawRows = rawSheet.getLastRow();
-  const rawCols = rawSheet.getLastColumn();
-  const rawData = rawRows > 0 ? rawSheet.getRange(1, 1, rawRows, rawCols).getValues() : [];
+  // 1. Bersihkan baris duplikat yang ditambahkan secara salah dari sinkronisasi sebelumnya
+  // Sebelum sinkronisasi, data RAW orisinal memiliki tepat 306 baris (termasuk header)
+  const lastRow = rawSheet.getLastRow();
+  if (lastRow > 306) {
+    rawSheet.deleteRows(307, lastRow - 306);
+    Logger.log("✓ Menghapus " + (lastRow - 306) + " baris duplikat tambahan dari sinkronisasi sebelumnya.");
+  }
+  SpreadsheetApp.flush();
+  
+  // 2. Baca data setelah di-restore bersih
+  const rawRowsClean = rawSheet.getLastRow();
+  const rawColsClean = rawSheet.getLastColumn();
+  const rawDataClean = rawRowsClean > 0 ? rawSheet.getRange(1, 1, rawRowsClean, rawColsClean).getValues() : [];
   
   const cocokRows = cocokSheet.getLastRow();
   const cocokCols = cocokSheet.getLastColumn();
@@ -1017,76 +1027,101 @@ function syncCocokData() {
     return;
   }
   
-  // Indeks data RAW berdasarkan ID (Kolom A) dan Email (Kolom F)
-  const rawMap = new Map();
-  const rawEmails = new Set();
+  // Buat mapping baris data RAW berdasarkan ID, Email, dan Nama
+  // (ID di index 0, Email di index 5, Nama di index 2)
+  const rawIdMap = new Map();
+  const rawEmailMap = new Map();
+  const rawNameMap = new Map();
   
-  for (let i = 1; i < rawData.length; i++) {
-    const row = rawData[i];
+  for (let i = 1; i < rawDataClean.length; i++) {
+    const row = rawDataClean[i];
     const id = String(row[0] || "").trim().toLowerCase();
     const email = String(row[5] || "").trim().toLowerCase();
-    if (id) rawMap.set(id, i + 1);
-    if (email) rawEmails.add(email);
+    const name = String(row[2] || "").trim().toLowerCase();
+    
+    if (id) rawIdMap.set(id, i + 1);
+    if (email) rawEmailMap.set(email, i + 1);
+    if (name) rawNameMap.set(name, i + 1);
   }
   
-  const additions = [];
+  let updateCount = 0;
+  let newAppendCount = 0;
   const perdalinIds = new Set();
   
   // Headers COCOK DATA:
   // 0: NO, 1: KODE, 2: Nama Peserta, 3: NIK, 4: Email, 5: No. Whatsapp, 6: Asal Instansi, 7: Profesi
   for (let i = 1; i < cocokData.length; i++) {
     const row = cocokData[i];
-    const id = String(row[1] || "").trim().toLowerCase(); // KODE di index 1
-    const email = String(row[4] || "").trim().toLowerCase(); // Email di index 4
+    const id = String(row[1] || "").trim(); // KODE di index 1
+    const email = String(row[4] || "").trim(); // Email di index 4
     const name = String(row[2] || "").trim(); // Nama di index 2
+    const nik = String(row[3] || "").trim(); // NIK di index 3
+    const phone = String(row[5] || "").trim(); // No. Whatsapp di index 5
+    const instansi = String(row[6] || "").trim(); // Asal Instansi di index 6
+    const profesi = String(row[7] || "").trim(); // Profesi di index 7
     
     if (!id) continue;
     
     // Cek duplikat di dalam COCOK DATA sendiri
-    if (perdalinIds.has(id)) {
+    if (perdalinIds.has(id.toLowerCase())) {
       continue;
     }
-    perdalinIds.add(id);
+    perdalinIds.add(id.toLowerCase());
     
-    // Cek apakah ID atau Email sudah ada di RAW
-    const inRawById = rawMap.has(id);
-    const inRawByEmail = email ? rawEmails.has(email) : false;
+    // Cari baris yang cocok di RAW (utamakan ID -> Email -> Nama)
+    let matchRowIndex = null;
     
-    if (!inRawById && !inRawByEmail && name && name !== "0" && name !== "0.0") {
-      // Petakan baris COCOK DATA ini ke dalam format kolom RAW (13 kolom)
+    if (rawIdMap.has(id.toLowerCase())) {
+      matchRowIndex = rawIdMap.get(id.toLowerCase());
+    } else if (email && rawEmailMap.has(email.toLowerCase())) {
+      matchRowIndex = rawEmailMap.get(email.toLowerCase());
+    } else if (name && rawNameMap.has(name.toLowerCase())) {
+      matchRowIndex = rawNameMap.get(name.toLowerCase());
+    }
+    
+    if (matchRowIndex !== null) {
+      // Ditemukan kecocokan! Lakukan UPDATE (overwrite) kolom di sheet RAW
+      rawSheet.getRange(matchRowIndex, 1).setValue(id);
+      rawSheet.getRange(matchRowIndex, 2).setValue(nik);
+      rawSheet.getRange(matchRowIndex, 3).setValue(name);
+      rawSheet.getRange(matchRowIndex, 4).setValue(instansi);
+      rawSheet.getRange(matchRowIndex, 5).setValue(phone);
+      rawSheet.getRange(matchRowIndex, 6).setValue(email);
+      rawSheet.getRange(matchRowIndex, 10).setValue(profesi);
+      rawSheet.getRange(matchRowIndex, 13).setValue("Peserta");
+      
+      updateCount++;
+      Logger.log("Update baris " + matchRowIndex + ": [" + id + "] " + name);
+    } else if (name && name !== "0" && name !== "0.0") {
+      // Tidak ditemukan kecocokan sama sekali! Tambahkan sebagai baris baru di bawah
       const rawFormattedRow = [
-        row[1], // ID Peserta (KODE)
-        row[3], // NIK
-        row[2], // Nama Peserta
-        row[6], // Asal Instansi
-        row[5], // No Handphone (No. Whatsapp)
-        row[4], // Email akun LMS
-        "",     // Cabang
-        "",     // Nama PS
-        "",     // Divisi
-        row[7], // Profesi
-        "",     // Jabatan
-        "",     // Produk
+        id,       // ID Peserta
+        nik,      // NIK
+        name,     // Nama
+        instansi, // Instansi
+        phone,    // Handphone (No. Whatsapp)
+        email,    // Email
+        "",       // Cabang
+        "",       // Nama PS
+        "",       // Divisi
+        profesi,  // Profesi
+        "",       // Jabatan
+        "",       // Produk
         "Peserta" // Tipe Registrasi
       ];
-      additions.push(rawFormattedRow);
+      rawSheet.appendRow(rawFormattedRow);
+      newAppendCount++;
+      Logger.log("Tambah baru: [" + id + "] " + name);
     }
   }
   
-  Logger.log("=== MEMULAI SINKRONISASI COCOK DATA ===");
-  Logger.log("Jumlah data baru yang ditemukan: " + additions.length);
+  SpreadsheetApp.flush();
   
-  if (additions.length > 0) {
-    for (let i = 0; i < additions.length; i++) {
-      rawSheet.appendRow(additions[i]);
-      Logger.log("Menambahkan: [" + additions[i][0] + "] " + additions[i][2]);
-    }
-    SpreadsheetApp.flush();
-    
-    // Re-sync sheet cermin PESERTA dengan memicu penulisan ulang formula QUERY
-    resetSpreadsheetData();
-    Logger.log("✓ Sinkronisasi berhasil! " + additions.length + " data ditambahkan dan sheet PESERTA diperbarui.");
-  } else {
-    Logger.log("✓ Semua data di sheet 'COCOK DATA' sudah sesuai dan ada di sheet 'RAW'. Tidak ada data yang perlu ditambahkan.");
-  }
+  // Re-sync sheet cermin PESERTA
+  resetSpreadsheetData();
+  
+  Logger.log("=== SELESAI SINKRONISASI COCOK DATA ===");
+  Logger.log("Total baris ter-update: " + updateCount);
+  Logger.log("Total baris baru ditambahkan: " + newAppendCount);
+  Logger.log("✓ Sinkronisasi selesai dengan sukses!");
 }
