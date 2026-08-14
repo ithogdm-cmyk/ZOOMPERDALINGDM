@@ -877,10 +877,9 @@
       state.totalTimeTaken += secondsUsed;
       
       // Hitung skor kuis:
-      // Benar: +100 poin + (Sisa Detik * 10 Poin)
+      // Benar: +25 poin
       if (letter === q.correct) {
-        const timeBonus = state.timeLeft * 10;
-        state.score += (100 + timeBonus);
+        state.score += 25;
       }
       
       // Animasi transisi 0.3 detik sebelum meluncur ke soal berikutnya
