@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard Kuis Webinar PERDALIN - GDM 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* =========================================================================
+       DARK PREMIUM DESIGN SYSTEM
+       ========================================================================= */
+    :root {
+      --bg-dark: #0f172a; /* Slate 900 */
+      --bg-card: #1e293b; /* Slate 800 */
+      --primary: #10b981; /* Emerald */
+      --primary-glow: rgba(16, 185, 129, 0.15);
+      --border-color: #334155; /* Slate 700 */
+      --text-main: #f8fafc; /* Slate 50 */
+      --text-muted: #94a3b8; /* Slate 400 */
+      --gold: #f59e0b;
+      --silver: #94a3b8;
+      --bronze: #d97706;
+      --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      overflow-x: hidden;
+    }
+
+    /* Container */
+    .leaderboard-container {
+      width: 100%;
+      max-width: 900px;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Brand Logos */
+    .brand-logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 24px;
+      background-color: rgba(255, 255, 255, 0.03);
+      padding: 16px 32px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .brand-logos img {
+      height: 54px;
+      max-width: 160px;
+      object-fit: contain;
+    }
+
+    /* Header Titles */
+    .header-section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .main-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+
+    .badge-live::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(0.9); opacity: 0.6; }
+      to { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* =========================================================================
+       RANKINGS GRID & TABLE
+       ========================================================================= */
+    .podium-section {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 40px;
+    }
+
+    /* Podium Cards for Top 3 */
+    .podium-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      position: relative;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .podium-card.rank-1 {
+      height: 240px;
+      border-color: rgba(245, 158, 11, 0.3);
+      box-shadow: 0 10px 30px -10px rgba(245, 158, 11, 0.15);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.03) 0%, var(--bg-card) 100%);
+    }
+
+    .podium-card.rank-2 {
+      height: 200px;
+      border-color: rgba(148, 163, 184, 0.3);
+      box-shadow: 0 10px 25px -10px rgba(148, 163, 184, 0.1);
+    }
+
+    .podium-card.rank-3 {
+      height: 180px;
+      border-color: rgba(217, 119, 6, 0.3);
+      box-shadow: 0 10px 25px -10px rgba(217, 119, 6, 0.1);
+    }
+
+    .podium-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      border: 2px solid var(--border-color);
+    }
+
+    .rank-1 .podium-avatar { border-color: var(--gold); color: var(--gold); }
+    .rank-2 .podium-avatar { border-color: var(--silver); color: var(--silver); }
+    .rank-3 .podium-avatar { border-color: var(--bronze); color: var(--bronze); }
+
+    .podium-name {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+
+    .podium-id {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .podium-score {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .podium-time {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    /* =========================================================================
+       LEADERBOARD LIST TABLE (RANK 4-20)
+       ========================================================================= */
+    .table-container {
+      background: var(--bg-card);
+      border-radius: 24px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.3);
+    }
+
+    .list-row {
+      display: grid;
+      grid-template-columns: 80px 100px 1fr 140px 120px;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      transition: var(--transition);
+    }
+
+    .list-row:last-child {
+      border-bottom: none;
+    }
+
+    .list-row.header {
+      background-color: rgba(255, 255, 255, 0.02);
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .list-row:not(.header):hover {
+      background-color: rgba(255, 255, 255, 0.01);
+    }
+
+    .col-rank {
+      font-weight: 800;
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .col-id {
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .col-name {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 20px;
+    }
+
+    .col-score {
+      font-weight: 800;
+      font-size: 1.125rem;
+      color: var(--primary);
+    }
+
+    .col-time {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 40px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+      stroke: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    /* Auto-Refresh Status Footer */
+    .refresh-footer {
+      text-align: center;
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      animation: pulse 1s infinite alternate;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="leaderboard-container">
+    
+    <!-- Brand Logos -->
+    <div class="brand-logos">
+      <img src="https://ithogdm-cmyk.github.io/hosted-assets/logo-perdalin.png" alt="Logo PERDALIN" onerror="this.style.display='none'">
+      <img src="https://ithogdm-cmyk.github.io/hosted-assets/logo-gdm.png" alt="Logo GDM" onerror="this.style.display='none'">
+    </div>
+
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="badge-live">LIVE UPDATING</div>
+      <h1 class="main-title">PAPAN PERINGKAT GAME KUIS</h1>
+      <p style="color: var(--text-muted);">Peserta Tercepat Dengan Jawaban Paling Tepat</p>
+    </div>
+
+    <!-- Top 3 Podium Grid (Visual Highlights) -->
+    <div id="podium-grid" class="podium-section" style="display: none;">
+      <!-- Rank 2 -->
+      <div class="podium-card rank-2">
+        <div class="podium-avatar">2</div>
+        <div id="p2-name" class="podium-name">-</div>
+        <div id="p2-id" class="podium-id">-</div>
+        <div id="p2-score" class="podium-score">0</div>
+        <div id="p2-time" class="podium-time">0s</div>
+      </div>
+      
+      <!-- Rank 1 -->
+      <div class="podium-card rank-1">
+        <div class="podium-avatar">1</div>
+        <div id="p1-name" class="podium-name">-</div>
+        <div id="p1-id" class="podium-id">-</div>
+        <div id="p1-score" class="podium-score">0</div>
+        <div id="p1-time" class="podium-time">0s</div>
+      </div>
+      
+      <!-- Rank 3 -->
+      <div class="podium-card rank-3">
+        <div class="podium-avatar">3</div>
+        <div id="p3-name" class="podium-name">-</div>
+        <div id="p3-id" class="podium-id">-</div>
+        <div id="p3-score" class="podium-score">0</div>
+        <div id="p3-time" class="podium-time">0s</div>
+      </div>
+    </div>
+
+    <!-- Main Rankings Table (Ranks 4-20) -->
+    <div id="leaderboard-table" class="table-container" style="display: none;">
+      <div class="list-row header">
+        <div class="col-rank" style="font-size:0.8rem; font-weight:700;">Rank</div>
+        <div class="col-id">ID</div>
+        <div class="col-name" style="text-align:left;">Nama Peserta</div>
+        <div class="col-score">Skor</div>
+        <div class="col-time">Waktu</div>
+      </div>
+      <div id="table-rows">
+        <!-- Rows will be injected here -->
+      </div>
+    </div>
+
+    <!-- Empty State View -->
+    <div id="empty-view" class="card" style="background: var(--bg-card); border-color: var(--border-color);">
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
+        </svg>
+        <h3 style="color: var(--text-main); font-weight:700; margin-bottom:8px;">Belum Ada Skor Masuk</h3>
+        <p>Kuis webinar sedang berlangsung. Hasil skor peserta akan otomatis tampil secara langsung di sini.</p>
+      </div>
+    </div>
+
+    <!-- Auto Refresh Footer -->
+    <div class="refresh-footer">
+      <div class="pulse-dot"></div>
+      <span>Memperbarui data secara real-time setiap 5 detik...</span>
+    </div>
+
+  </div>
+
+  <!-- Config file import -->
+  <script src="config.js"></script>
+
+  <script>
+    const API_URL = WEBINAR_CONFIG.API_URL;
+    
+    // Inisialisasi loop auto-refresh
+    function initLeaderboard() {
+      fetchRankings();
+      setInterval(fetchRankings, 5000); // Polling setiap 5 detik
+    }
+
+    function fetchRankings() {
+      fetch(API_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: "getLeaderboard" })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === 'success') {
+          renderRankings(res.rankings);
+        }
+      })
+      .catch(err => {
+        console.error("Gagal memperbarui papan peringkat:", err);
+      });
+    }
+
+    function renderRankings(rankings) {
+      const emptyView = document.getElementById('empty-view');
+      const podiumGrid = document.getElementById('podium-grid');
+      const tableContainer = document.getElementById('leaderboard-table');
+      const tableRows = document.getElementById('table-rows');
+
+      if (!rankings || rankings.length === 0) {
+        // Tampilkan Tampilan Kosong jika tidak ada data
+        emptyView.style.display = 'block';
+        podiumGrid.style.display = 'none';
+        tableContainer.style.display = 'none';
+        return;
+      }
+
+      emptyView.style.display = 'none';
+      podiumGrid.style.display = 'grid';
+
+      // 1. Tampilkan Top 3 Podium
+      const top3 = {
+        p1: rankings.find(r => r.rank === 1),
+        p2: rankings.find(r => r.rank === 2),
+        p3: rankings.find(r => r.rank === 3)
+      };
+
+      // Set Podium 1
+      if (top3.p1) {
+        document.getElementById('p1-name').textContent = top3.p1.name;
+        document.getElementById('p1-id').textContent = top3.p1.id;
+        document.getElementById('p1-score').textContent = top3.p1.score;
+        document.getElementById('p1-time').textContent = `${top3.p1.timeTaken}s`;
+        document.querySelector('.rank-1').style.visibility = 'visible';
+      } else {
+        document.querySelector('.rank-1').style.visibility = 'hidden';
+      }
+
+      // Set Podium 2
+      if (top3.p2) {
+        document.getElementById('p2-name').textContent = top3.p2.name;
+        document.getElementById('p2-id').textContent = top3.p2.id;
+        document.getElementById('p2-score').textContent = top3.p2.score;
+        document.getElementById('p2-time').textContent = `${top3.p2.timeTaken}s`;
+        document.querySelector('.rank-2').style.visibility = 'visible';
+      } else {
+        document.querySelector('.rank-2').style.visibility = 'hidden';
+      }
+
+      // Set Podium 3
+      if (top3.p3) {
+        document.getElementById('p3-name').textContent = top3.p3.name;
+        document.getElementById('p3-id').textContent = top3.p3.id;
+        document.getElementById('p3-score').textContent = top3.p3.score;
+        document.getElementById('p3-time').textContent = `${top3.p3.timeTaken}s`;
+        document.querySelector('.rank-3').style.visibility = 'visible';
+      } else {
+        document.querySelector('.rank-3').style.visibility = 'hidden';
+      }
+
+      // 2. Tampilkan Rank 4-20 di dalam Tabel
+      const listPlayers = rankings.filter(r => r.rank > 3);
+      
+      if (listPlayers.length > 0) {
+        tableContainer.style.display = 'block';
+        tableRows.innerHTML = ''; // Kosongkan tabel
+        
+        listPlayers.forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'list-row';
+          row.innerHTML = `
+            <div class="col-rank">${p.rank}</div>
+            <div class="col-id">${p.id}</div>
+            <div class="col-name" style="text-align:left;">${p.name}</div>
+            <div class="col-score">${p.score}</div>
+            <div class="col-time">${p.timeTaken}s</div>
+          `;
+          tableRows.appendChild(row);
+        });
+      } else {
+        tableContainer.style.display = 'none';
+      }
+    }
+
+    // Jalankan saat halaman siap
+    window.addEventListener('DOMContentLoaded', initLeaderboard);
+  </script>
+</body>
+</html>

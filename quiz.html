@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuis Webinar PERDALIN - GDM 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* =========================================================================
+       DESIGN SYSTEM & VARIABLES
+       ========================================================================= */
+    :root {
+      --primary: #10b981; /* Emerald Green */
+      --primary-hover: #059669;
+      --primary-light: rgba(16, 185, 129, 0.08);
+      --danger: #ef4444;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bg-app: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* =========================================================================
+       LAYOUT CONTAINERS
+       ========================================================================= */
+    .app-container {
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+    }
+
+    /* Main Brand Header */
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .brand-header img {
+      height: 48px;
+      max-width: 120px;
+      object-fit: contain;
+    }
+
+    /* Card Frame */
+    .card {
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 
+                  0 8px 10px -6px rgba(0, 0, 0, 0.02),
+                  0 0 0 1px rgba(0, 0, 0, 0.01);
+      border: 1px solid var(--border-color);
+      width: 100%;
+      position: relative;
+    }
+
+    /* View Switcher */
+    .view {
+      display: none;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typography */
+    .title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.25;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.925rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    /* =========================================================================
+       COUNTDOWN VIEW (BEFORE 11:00 AM)
+       ========================================================================= */
+    .countdown-wrapper {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .countdown-box {
+      flex: 1;
+      background: var(--bg-app);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .countdown-num {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .countdown-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    /* =========================================================================
+       LOGIN/VERIFICATION FORM
+       ========================================================================= */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .form-input {
+      width: 100%;
+      height: 52px;
+      padding: 0 16px;
+      border-radius: 14px;
+      border: 1.5px solid var(--border-color);
+      font-family: inherit;
+      font-size: 1rem;
+      color: var(--text-main);
+      background-color: var(--bg-app);
+      transition: var(--transition);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background-color: var(--bg-card);
+      box-shadow: 0 0 0 4px var(--primary-light);
+    }
+
+    .btn {
+      width: 100%;
+      height: 52px;
+      border: none;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      color: white;
+      box-shadow: 0 4px 12px 0 rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px 0 rgba(16, 185, 129, 0.3);
+    }
+
+    /* Alert Boxes */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      line-height: 1.4;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .alert-error {
+      background-color: #fef2f2;
+      border: 1px solid #fee2e2;
+      color: #b91c1c;
+    }
+
+    .alert svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* =========================================================================
+       QUIZ BOARD VIEW
+       ========================================================================= */
+    .quiz-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .quiz-progress-text {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Timer styles */
+    .timer-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background-color: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-main);
+      transition: var(--transition);
+    }
+
+    .timer-badge.warning {
+      background-color: #fef2f2;
+      color: var(--danger);
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    /* Progress bar */
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background-color: var(--border-color);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--primary);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Question box */
+    .question-box {
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 24px;
+    }
+
+    /* Answer options */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      transition: var(--transition);
+    }
+
+    .option-card:hover {
+      border-color: var(--primary);
+      background-color: var(--primary-light);
+    }
+
+    .option-card.selected {
+      border-color: var(--primary);
+      background-color: var(--primary-light);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .option-letter {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+
+    .option-card:hover .option-letter,
+    .option-card.selected .option-letter {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .option-text {
+      line-height: 1.4;
+    }
+
+    /* =========================================================================
+       SUCCESS / RESULT VIEW
+       ========================================================================= */
+    .success-icon-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 2px solid currentColor;
+      margin: 0 auto 20px auto;
+    }
+
+    .success-icon-wrapper svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .result-box {
+      background: var(--bg-app);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border-color);
+    }
+
+    .result-row:last-child {
+      border-bottom: none;
+    }
+
+    .result-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .result-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .result-value.score {
+      color: var(--primary);
+      font-size: 1.125rem;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      animation: rotate 2s linear infinite;
+      width: 24px;
+      height: 24px;
+    }
+
+    .spinner circle {
+      stroke: currentColor;
+      stroke-linecap: round;
+      animation: dash 1.5s ease-in-out infinite;
+    }
+
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes dash {
+      0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+      50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+      100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Brand Header -->
+    <div class="brand-header">
+      <img src="https://ithogdm-cmyk.github.io/hosted-assets/logo-perdalin.png" alt="Logo PERDALIN" onerror="this.style.display='none'">
+      <img src="https://ithogdm-cmyk.github.io/hosted-assets/logo-gdm.png" alt="Logo GDM" onerror="this.style.display='none'">
+    </div>
+
+    <div class="card">
+      
+      <!-- =====================================================================
+           VIEW 1: TIME LOCK / COUNTDOWN
+           ===================================================================== -->
+      <div id="view-countdown" class="view">
+        <h1 class="title">Game Kuis Belum Dibuka</h1>
+        <p class="subtitle">Kuis webinar PERDALIN - GDM 2026 akan dibuka secara serentak dalam hitungan mundur berikut:</p>
+        
+        <div class="countdown-wrapper">
+          <div class="countdown-box">
+            <div id="cd-hours" class="countdown-num">00</div>
+            <div class="countdown-label">Jam</div>
+          </div>
+          <div class="countdown-box">
+            <div id="cd-minutes" class="countdown-num">00</div>
+            <div class="countdown-label">Menit</div>
+          </div>
+          <div class="countdown-box">
+            <div id="cd-seconds" class="countdown-num">00</div>
+            <div class="countdown-label">Detik</div>
+          </div>
+        </div>
+        
+        <p class="subtitle" style="margin-bottom: 0; font-size: 0.85rem;">Kuis akan otomatis terbuka pada hari <strong>Sabtu, 15 Agustus 2026 pukul 11:00 WIB</strong>.</p>
+      </div>
+
+      <!-- =====================================================================
+           VIEW 2: LOGIN / VERIFICATION
+           ===================================================================== -->
+      <div id="view-login" class="view">
+        <h1 class="title">Masuk ke Game Kuis</h1>
+        <p class="subtitle">Silakan masukkan ID Peserta atau Email terdaftar Anda untuk memulai kuis.</p>
+        
+        <div id="login-alert-container"></div>
+        
+        <form id="form-login" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="input-email-id" class="form-label">ID Peserta / Email Akun LMS</label>
+            <input type="text" id="input-email-id" class="form-input" placeholder="Contoh: GDM001 atau email Anda" required>
+          </div>
+          
+          <button type="submit" id="btn-login-submit" class="btn btn-primary">
+            <span>Mulai Bermain</span>
+            <svg class="spinner" style="display: none;" viewBox="0 0 50 50">
+              <circle cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- =====================================================================
+           VIEW 3: QUIZ BOARD
+           ===================================================================== -->
+      <div id="view-quiz" class="view">
+        <div class="quiz-header">
+          <span id="quiz-progress" class="quiz-progress-text">Soal 1 dari 4</span>
+          <div id="timer-badge" class="timer-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="timer-count">15</span>s
+          </div>
+        </div>
+        
+        <div class="progress-bar-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        
+        <div id="question-text" class="question-box">-</div>
+        
+        <div class="options-list">
+          <div onclick="selectOption('a')" id="opt-a" class="option-card">
+            <div class="option-letter">A</div>
+            <div id="opt-a-text" class="option-text">Option A</div>
+          </div>
+          <div onclick="selectOption('b')" id="opt-b" class="option-card">
+            <div class="option-letter">B</div>
+            <div id="opt-b-text" class="option-text">Option B</div>
+          </div>
+          <div onclick="selectOption('c')" id="opt-c" class="option-card">
+            <div class="option-letter">C</div>
+            <div id="opt-c-text" class="option-text">Option C</div>
+          </div>
+          <div onclick="selectOption('d')" id="opt-d" class="option-card">
+            <div class="option-letter">D</div>
+            <div id="opt-d-text" class="option-text">Option D</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           VIEW 4: SUBMITTING SCORE (LOADING)
+           ===================================================================== -->
+      <div id="view-submitting" class="view" style="text-align: center; padding: 20px 0;">
+        <div style="color: var(--primary); display: inline-block; margin-bottom: 16px;">
+          <svg class="spinner" style="width: 48px; height: 48px;" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+          </svg>
+        </div>
+        <h1 class="title">Menyimpan Skor...</h1>
+        <p class="subtitle" style="margin-bottom: 0;">Harap tunggu sebentar, skor Anda sedang direkam secara aman ke server kuis.</p>
+      </div>
+
+      <!-- =====================================================================
+           VIEW 5: SUCCESS / RESULT
+           ===================================================================== -->
+      <div id="view-success" class="view" style="text-align: center;">
+        <div class="success-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </div>
+        
+        <h1 class="title">Kuis Selesai!</h1>
+        <p class="subtitle">Terima kasih atas partisipasi Anda. Jawaban Anda telah tersimpan dengan aman.</p>
+        
+        <div class="result-box">
+          <div class="result-row">
+            <span class="result-label">Nama Peserta</span>
+            <span id="res-name" class="result-value">-</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Skor Akhir</span>
+            <span id="res-score" class="result-value score">- Poin</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Total Waktu Jawab</span>
+            <span id="res-time" class="result-value">- Detik</span>
+          </div>
+        </div>
+        
+        <p class="subtitle" style="font-size: 0.85rem; margin-bottom: 0;">Peringkat tertinggi dengan waktu tercepat akan ditampilkan secara langsung pada papan proyektor panitia!</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Config file import -->
+  <script src="config.js"></script>
+  
+  <script>
+    // =========================================================================
+    // CONFIGURATION & QUESTIONS LIST
+    // =========================================================================
+    const API_URL = WEBINAR_CONFIG.API_URL;
+    
+    // Konfigurasi waktu gembok kuis (15 Agustus 2026 11:00 WIB)
+    const TARGET_START_TIME = new Date("2026-08-15T11:00:00+07:00").getTime();
+    
+    // Kunci jawaban kuis: Anda dapat merubah huruf kunci jawaban (a, b, c, d)
+    // pada variabel 'correct' di bawah ini kapan saja jika kunci sudah siap.
+    const QUESTIONS = [
+      {
+        question: "1. Sebutkan Produk PT. Global Dispomedika yang berfungsi untuk pembersihan dan disinfeksi permukaan",
+        options: {
+          a: "Metrashield",
+          b: "Metrazyme",
+          c: "Metraclin",
+          d: "Metracide"
+        },
+        correct: "c" // Kunci Jawaban Sementara: Metraclin
+      },
+      {
+        question: "2. Berikut merupakan sediaan Metraclin kecuali;",
+        options: {
+          a: "Tissue",
+          b: "Jerigen",
+          c: "Spray",
+          d: "Sachet"
+        },
+        correct: "d" // Kunci Jawaban Sementara: Sachet
+      },
+      {
+        question: "3. Salah satu keunggulan produk metraclin adalah",
+        options: {
+          a: "memiliki aroma seperti buah buahan",
+          b: "membunuh mikroorganisme hingga spora",
+          c: "tidak mengandung alcohol dan aman digunakan untuk semua jenis permukaan",
+          d: "hanya dapat digunakan untuk permukaan lantai"
+        },
+        correct: "c" // Kunci Jawaban Sementara: tidak mengandung alcohol...
+      },
+      {
+        question: "4. Setelah MetraClin diaplikasikan, tindakan yang tepat adalah…",
+        options: {
+          a: "Langsung dibilas dengan air",
+          b: "Langsung dikeringkan secepat mungkin",
+          c: "Memberikan waktu kontak sesuai petunjuk penggunaan",
+          d: "Menambahkan sabun cair"
+        },
+        correct: "c" // Kunci Jawaban Sementara: Memberikan waktu kontak...
+      }
+    ];
+
+    // =========================================================================
+    // STATE MANAGEMENT
+    // =========================================================================
+    const state = {
+      emailOrId: "",
+      playerName: "",
+      currentQuestionIndex: 0,
+      score: 0,
+      totalTimeTaken: 0,
+      questionTimer: null,
+      timeLeft: 15,
+      startTime: null
+    };
+
+    // =========================================================================
+    // VIEW SWITCHER
+    // =========================================================================
+    const views = {
+      countdown: document.getElementById('view-countdown'),
+      login: document.getElementById('view-login'),
+      quiz: document.getElementById('view-quiz'),
+      submitting: document.getElementById('view-submitting'),
+      success: document.getElementById('view-success')
+    };
+
+    function switchView(targetKey) {
+      Object.keys(views).forEach(key => {
+        if (key === targetKey) {
+          views[key].classList.add('active');
+        } else {
+          views[key].classList.remove('active');
+        }
+      });
+    }
+
+    // =========================================================================
+    // TIME LOCK & COUNTDOWN (SECURE SERVER TIME CHECK)
+    // =========================================================================
+    let countdownInterval = null;
+
+    function initPage() {
+      // 1. Cek status kuis secara real-time berdasarkan waktu server
+      checkTimeLockAndRun();
+    }
+
+    function checkTimeLockAndRun() {
+      fetch(API_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: "getQuizStatus" })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === 'success' && res.open) {
+          // Kuis sudah dibuka! Masuk ke view login
+          switchView('login');
+        } else {
+          // Kuis masih terkunci! Jalankan hitung mundur digital
+          switchView('countdown');
+          startLocalCountdown(res.serverTime, res.startTime);
+        }
+      })
+      .catch(err => {
+        console.error("Gagal sinkronisasi waktu server:", err);
+        // Fallback ke waktu lokal klien jika server gagal diakses
+        const nowLocal = new Date().getTime();
+        if (nowLocal >= TARGET_START_TIME) {
+          switchView('login');
+        } else {
+          switchView('countdown');
+          startLocalCountdown(new Date().toISOString(), new Date(TARGET_START_TIME).toISOString());
+        }
+      });
+    }
+
+    function startLocalCountdown(serverTimeStr, startTimeStr) {
+      if (countdownInterval) clearInterval(countdownInterval);
+      
+      let currentServerTime = new Date(serverTimeStr).getTime();
+      const targetTime = new Date(startTimeStr).getTime();
+      const localStart = Date.now();
+      
+      function updateCountdown() {
+        // Hitung selisih waktu secara dinamis
+        const elapsed = Date.now() - localStart;
+        const timeNow = currentServerTime + elapsed;
+        const diff = targetTime - timeNow;
+        
+        if (diff <= 0) {
+          clearInterval(countdownInterval);
+          // Unlock game kuis!
+          switchView('login');
+          return;
+        }
+        
+        // Konversi ke Jam, Menit, Detik
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
+        document.getElementById('cd-minutes').textContent = String(minutes).padStart(2, '0');
+        document.getElementById('cd-seconds').textContent = String(seconds).padStart(2, '0');
+      }
+      
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 1000);
+    }
+
+    // =========================================================================
+    // PLAYER LOGIN & VERIFICATION
+    // =========================================================================
+    const loginView = {
+      alertContainer: document.getElementById('login-alert-container'),
+      input: document.getElementById('input-email-id'),
+      btn: document.getElementById('btn-login-submit')
+    };
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const emailOrId = loginView.input.value.trim();
+      if (!emailOrId) return;
+
+      loginView.alertContainer.innerHTML = '';
+      setLoading(loginView.btn, true);
+
+      // Cek apakah terdaftar di sheet PESERTA dengan action check absensi
+      fetch(API_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: "check", email: emailOrId })
+      })
+      .then(res => res.json())
+      .then(res => {
+        setLoading(loginView.btn, false);
+        if (res.status === 'found' || res.status === 'already_present') {
+          // Peserta valid! Mulai permainan kuis
+          state.emailOrId = emailOrId;
+          state.playerName = res.name;
+          startQuiz();
+        } else {
+          showAlert(loginView.alertContainer, 'ID Peserta atau Email Anda tidak terdaftar. Pastikan Anda sudah terdaftar atau melakukan registrasi absensi terlebih dahulu.');
+        }
+      })
+      .catch(err => {
+        setLoading(loginView.btn, false);
+        showAlert(loginView.alertContainer, 'Gagal terhubung dengan server: ' + err.message);
+      });
+    }
+
+    // =========================================================================
+    // QUIZ SYSTEM LOGIC
+    // =========================================================================
+    const quizView = {
+      progress: document.getElementById('quiz-progress'),
+      timerText: document.getElementById('timer-count'),
+      timerBadge: document.getElementById('timer-badge'),
+      progressBar: document.getElementById('progress-bar'),
+      questionText: document.getElementById('question-text'),
+      options: {
+        a: { card: document.getElementById('opt-a'), text: document.getElementById('opt-a-text') },
+        b: { card: document.getElementById('opt-b'), text: document.getElementById('opt-b-text') },
+        c: { card: document.getElementById('opt-c'), text: document.getElementById('opt-c-text') },
+        d: { card: document.getElementById('opt-d'), text: document.getElementById('opt-d-text') }
+      }
+    };
+
+    function startQuiz() {
+      state.currentQuestionIndex = 0;
+      state.score = 0;
+      state.totalTimeTaken = 0;
+      state.startTime = Date.now();
+      switchView('quiz');
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      if (state.questionTimer) clearInterval(state.questionTimer);
+      
+      const q = QUESTIONS[state.currentQuestionIndex];
+      
+      // Update info header kuis
+      quizView.progress.textContent = `Soal ${state.currentQuestionIndex + 1} dari ${QUESTIONS.length}`;
+      const progressPct = ((state.currentQuestionIndex) / QUESTIONS.length) * 100;
+      quizView.progressBar.style.width = `${progressPct}%`;
+      
+      // Tampilkan Soal & Jawaban
+      quizView.questionText.textContent = q.question;
+      Object.keys(quizView.options).forEach(letter => {
+        quizView.options[letter].text.textContent = q.options[letter];
+        quizView.options[letter].card.classList.remove('selected');
+      });
+      
+      // Timer setup (15 detik per soal)
+      state.timeLeft = 15;
+      quizView.timerText.textContent = state.timeLeft;
+      quizView.timerBadge.classList.remove('warning');
+      
+      state.questionTimer = setInterval(() => {
+        state.timeLeft--;
+        quizView.timerText.textContent = state.timeLeft;
+        
+        if (state.timeLeft <= 5) {
+          quizView.timerBadge.classList.add('warning');
+        }
+        
+        if (state.timeLeft <= 0) {
+          clearInterval(state.questionTimer);
+          // Waktu habis! Poin 0, lanjut ke soal berikutnya
+          nextQuestion();
+        }
+      }, 1000);
+    }
+
+    function selectOption(letter) {
+      clearInterval(state.questionTimer);
+      
+      // Beri tanda visual pilihan terpilih
+      Object.keys(quizView.options).forEach(key => {
+        quizView.options[key].card.classList.remove('selected');
+      });
+      quizView.options[letter].card.classList.add('selected');
+      
+      const q = QUESTIONS[state.currentQuestionIndex];
+      const secondsUsed = 15 - state.timeLeft;
+      state.totalTimeTaken += secondsUsed;
+      
+      // Hitung skor kuis:
+      // Benar: +100 poin + (Sisa Detik * 10 Poin)
+      if (letter === q.correct) {
+        const timeBonus = state.timeLeft * 10;
+        state.score += (100 + timeBonus);
+      }
+      
+      // Animasi transisi 0.3 detik sebelum meluncur ke soal berikutnya
+      setTimeout(() => {
+        nextQuestion();
+      }, 300);
+    }
+
+    function nextQuestion() {
+      state.currentQuestionIndex++;
+      if (state.currentQuestionIndex < QUESTIONS.length) {
+        loadQuestion();
+      } else {
+        // Semua soal selesai! Selesaikan kuis dan submit skor
+        submitScore();
+      }
+    }
+
+    function submitScore() {
+      switchView('submitting');
+      
+      // Bulatkan total waktu pengerjaan
+      const totalDuration = Math.round((Date.now() - state.startTime) / 1000);
+      
+      fetch(API_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          action: "submitQuiz",
+          emailOrId: state.emailOrId,
+          score: state.score,
+          timeTaken: totalDuration
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === 'success') {
+          // Tampilkan hasil sukses
+          document.getElementById('res-name').textContent = res.name;
+          document.getElementById('res-score').textContent = `${res.score} Poin`;
+          document.getElementById('res-time').textContent = `${totalDuration} Detik`;
+          switchView('success');
+        } else {
+          // Tampilkan pesan error jika ditolak (misal: sudah berpartisipasi)
+          switchView('login');
+          showAlert(loginView.alertContainer, res.message || 'Gagal menyimpan skor kuis.');
+        }
+      })
+      .catch(err => {
+        switchView('login');
+        showAlert(loginView.alertContainer, 'Gagal mengirim skor: ' + err.message);
+      });
+    }
+
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
+    function setLoading(btn, isLoading) {
+      const span = btn.querySelector('span');
+      const spinner = btn.querySelector('.spinner');
+      if (isLoading) {
+        btn.disabled = true;
+        span.style.opacity = '0.5';
+        spinner.style.display = 'block';
+      } else {
+        btn.disabled = false;
+        span.style.opacity = '1';
+        spinner.style.display = 'none';
+      }
+    }
+
+    function showAlert(container, msg) {
+      container.innerHTML = `
+        <div class="alert alert-error">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <div>${msg}</div>
+        </div>
+      `;
+    }
+
+    // Jalankan inisialisasi halaman saat dokumen selesai dimuat
+    window.addEventListener('DOMContentLoaded', initPage);
+  </script>
+</body>
+</html>

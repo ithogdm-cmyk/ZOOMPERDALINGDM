@@ -20,6 +20,11 @@ const CONFIG = {
   ADMIN_PASSWORD: "#GDMPERDALIN26" // Password default untuk masuk ke dashboard admin
 };
 
+const QUIZ_CONFIG = {
+  SCORE_SHEET_NAME: "Quiz_Scores",
+  START_TIME: "2026-08-15T11:00:00+07:00" // Jam 11 Siang WIB pada 15 Agustus 2026
+};
+
 /**
  * Handle GET Requests
  * Mengembalikan informasi status API jika diakses langsung melalui browser
@@ -62,6 +67,12 @@ function doPost(e) {
       }
     } else if (action === "resetData") {
       result = resetSpreadsheetData();
+    } else if (action === "getQuizStatus") {
+      result = getQuizStatus();
+    } else if (action === "submitQuiz") {
+      result = submitQuiz(postData.emailOrId, postData.score, postData.timeTaken);
+    } else if (action === "getLeaderboard") {
+      result = getLeaderboard();
     } else {
       result = { status: "error", message: "Aksi '" + action + "' tidak dikenali oleh API." };
     }
@@ -149,6 +160,36 @@ function getAttendanceSheet(ss) {
         sheet.getRange(1, 1).setHorizontalAlignment("center");
       }
     }
+  }
+  return sheet;
+}
+
+/**
+ * Mendapatkan objek Sheet Skor Kuis (Quiz_Scores)
+ */
+function getQuizScoresSheet(ss) {
+  let sheet = ss.getSheetByName(QUIZ_CONFIG.SCORE_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(QUIZ_CONFIG.SCORE_SHEET_NAME);
+    
+    // Inisialisasi Header
+    const headers = ["ID Peserta", "Email", "Nama", "Skor Kuis", "Waktu Jawab (Detik)", "Waktu Kirim"];
+    sheet.appendRow(headers);
+    
+    // Styling Header
+    const headerRange = sheet.getRange(1, 1, 1, 6);
+    headerRange.setFontWeight("bold");
+    headerRange.setBackground("#e2e8f0");
+    headerRange.setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+    
+    // Atur Lebar Kolom
+    sheet.setColumnWidth(1, 120);
+    sheet.setColumnWidth(2, 250);
+    sheet.setColumnWidth(3, 250);
+    sheet.setColumnWidth(4, 120);
+    sheet.setColumnWidth(5, 150);
+    sheet.setColumnWidth(6, 200);
   }
   return sheet;
 }
@@ -759,8 +800,181 @@ function resetSpreadsheetData() {
   
   SpreadsheetApp.flush();
   
+  // 4. Bersihkan sheet skor kuis jika ada
+  let quizSheet = ss.getSheetByName(QUIZ_CONFIG.SCORE_SHEET_NAME);
+  if (quizSheet) {
+    const quizLastRow = quizSheet.getLastRow();
+    if (quizLastRow >= 2) {
+      quizSheet.deleteRows(2, quizLastRow - 1);
+    }
+  }
+  
   return {
     status: "success",
-    message: "Spreadsheet, data kehadiran, dan sheet cermin baca cepat PESERTA berhasil di-reset dengan bersih!"
+    message: "Spreadsheet, data kehadiran, kuis, dan sheet cermin baca cepat PESERTA berhasil di-reset dengan bersih!"
+  };
+}
+
+/**
+ * Memeriksa status waktu mulai kuis berdasarkan server time
+ */
+function getQuizStatus() {
+  const now = new Date();
+  const startTime = new Date(QUIZ_CONFIG.START_TIME);
+  const isOpen = now.getTime() >= startTime.getTime();
+  
+  return {
+    status: "success",
+    open: isOpen,
+    serverTime: Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    startTime: QUIZ_CONFIG.START_TIME
+  };
+}
+
+/**
+ * Menyimpan skor kuis peserta setelah memvalidasi ID dan satu kali percobaan
+ */
+function submitQuiz(emailOrId, score, timeTaken) {
+  if (!emailOrId) {
+    return { status: "error", message: "ID Peserta atau Email tidak boleh kosong." };
+  }
+  if (score === undefined || timeTaken === undefined) {
+    return { status: "error", message: "Skor dan Waktu Jawab wajib dikirimkan." };
+  }
+  
+  emailOrId = emailOrId.trim().toLowerCase();
+  score = parseInt(score, 10);
+  timeTaken = parseFloat(timeTaken);
+  
+  if (isNaN(score) || isNaN(timeTaken)) {
+    return { status: "error", message: "Skor atau Waktu Jawab tidak valid." };
+  }
+  
+  const ss = getSpreadsheet();
+  
+  // 1. Validasi pendaftaran peserta di sheet cermin PESERTA (baca cepat)
+  const pesSheet = getPesertaSheet(ss);
+  const regLastRow = pesSheet.getLastRow();
+  if (regLastRow < 2) {
+    return { status: "error", message: "Database pendaftaran kosong." };
+  }
+  
+  const regData = pesSheet.getRange(2, 1, regLastRow - 1, 4).getValues(); // ID, Nama, Email, Kategori
+  let id = "";
+  let name = "";
+  let email = "";
+  let isRegistered = false;
+  
+  for (let i = 0; i < regData.length; i++) {
+    const row = regData[i];
+    const rowId = String(row[0] || "").trim().toLowerCase();
+    const rowName = String(row[1] || "").trim();
+    const rowEmail = String(row[2] || "").trim().toLowerCase();
+    
+    if ((rowId === emailOrId || rowEmail === emailOrId) && rowName && rowName !== "0" && rowName !== "0.0") {
+      id = String(row[0] || "").trim();
+      name = rowName;
+      email = String(row[2] || "").trim();
+      isRegistered = true;
+      break;
+    }
+  }
+  
+  if (!isRegistered) {
+    return { status: "error", message: "ID Peserta atau Email Anda tidak terdaftar sebagai peserta webinar." };
+  }
+  
+  // 2. Akses/Inisialisasi sheet Quiz_Scores dan cek double-attempt
+  const quizSheet = getQuizScoresSheet(ss);
+  const quizLastRow = quizSheet.getLastRow();
+  
+  if (quizLastRow >= 2) {
+    const quizData = quizSheet.getRange(2, 1, quizLastRow - 1, 2).getValues(); // Baca ID (kolom 1) dan Email (kolom 2)
+    for (let i = 0; i < quizData.length; i++) {
+      const qId = String(quizData[i][0]).trim().toLowerCase();
+      const qEmail = String(quizData[i][1]).trim().toLowerCase();
+      if (qId === id.toLowerCase() || qEmail === email.toLowerCase()) {
+        return { status: "error", message: "Anda sudah berpartisipasi dalam kuis ini! Hanya diperbolehkan 1x percobaan." };
+      }
+    }
+  }
+  
+  // 3. Rekam skor kuis secara aman
+  const now = new Date();
+  quizSheet.appendRow([id, email, name, score, timeTaken, now]);
+  SpreadsheetApp.flush();
+  
+  return {
+    status: "success",
+    name: name,
+    score: score,
+    message: "Skor kuis Anda berhasil disimpan!"
+  };
+}
+
+/**
+ * Mengambil papan peringkat Top 20 kuis (urut skor desc, waktu jawab asc, submit asc)
+ */
+function getLeaderboard() {
+  const ss = getSpreadsheet();
+  const quizSheet = getQuizScoresSheet(ss);
+  const quizLastRow = quizSheet.getLastRow();
+  
+  if (quizLastRow < 2) {
+    return { status: "success", rankings: [] };
+  }
+  
+  const allScores = quizSheet.getRange(2, 1, quizLastRow - 1, 6).getValues(); // ID, Email, Nama, Score, TimeTaken, Timestamp
+  const players = [];
+  
+  for (let i = 0; i < allScores.length; i++) {
+    const row = allScores[i];
+    const id = String(row[0] || "").trim();
+    const email = String(row[1] || "").trim();
+    const name = String(row[2] || "").trim();
+    const score = parseInt(row[3], 10);
+    const timeTaken = parseFloat(row[4]);
+    const timestamp = row[5];
+    
+    if (id && name) {
+      players.push({
+        id: id,
+        email: email,
+        name: name,
+        score: isNaN(score) ? 0 : score,
+        timeTaken: isNaN(timeTaken) ? 999 : timeTaken,
+        timestamp: timestamp instanceof Date ? timestamp.getTime() : new Date().getTime()
+      });
+    }
+  }
+  
+  // Urutkan: 1. Skor Tertinggi (desc) -> 2. Waktu Tercepat (asc) -> 3. Waktu Submit Terawal (asc)
+  players.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    if (a.timeTaken !== b.timeTaken) {
+      return a.timeTaken - b.timeTaken;
+    }
+    return a.timestamp - b.timestamp;
+  });
+  
+  // Ambil Top 20 untuk layar proyektor
+  const rankings = [];
+  const limit = Math.min(players.length, 20);
+  for (let i = 0; i < limit; i++) {
+    const p = players[i];
+    rankings.push({
+      rank: i + 1,
+      id: p.id,
+      name: p.name,
+      score: p.score,
+      timeTaken: p.timeTaken
+    });
+  }
+  
+  return {
+    status: "success",
+    rankings: rankings
   };
 }
