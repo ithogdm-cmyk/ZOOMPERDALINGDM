@@ -73,6 +73,10 @@ function doPost(e) {
       result = submitQuiz(postData.emailOrId, postData.score, postData.timeTaken);
     } else if (action === "getLeaderboard") {
       result = getLeaderboard();
+    } else if (action === "compareSheets") {
+      result = compareSheetsData();
+    } else if (action === "syncSheets") {
+      result = syncSheetsData(postData.additions);
     } else {
       result = { status: "error", message: "Aksi '" + action + "' tidak dikenali oleh API." };
     }
@@ -976,5 +980,69 @@ function getLeaderboard() {
   return {
     status: "success",
     rankings: rankings
+  };
+}
+
+/**
+ * Mengambil data sheet RAW dan sheet DATA DARI PERDALIN untuk perbandingan
+ */
+function compareSheetsData() {
+  const ss = getSpreadsheet();
+  const rawSheet = ss.getSheetByName(CONFIG.RAW_SHEET_NAME);
+  const perdalinSheet = ss.getSheetByName("DATA DARI PERDALIN");
+  
+  if (!perdalinSheet) {
+    return { status: "error", message: "Sheet 'DATA DARI PERDALIN' tidak ditemukan." };
+  }
+  
+  const rawRows = rawSheet.getLastRow();
+  const rawCols = rawSheet.getLastColumn();
+  const rawData = rawRows > 0 ? rawSheet.getRange(1, 1, rawRows, rawCols).getValues() : [];
+  
+  const perdalinRows = perdalinSheet.getLastRow();
+  const perdalinCols = perdalinSheet.getLastColumn();
+  const perdalinData = perdalinRows > 0 ? perdalinSheet.getRange(1, 1, perdalinRows, perdalinCols).getValues() : [];
+  
+  return {
+    status: "success",
+    raw: {
+      rows: rawRows,
+      cols: rawCols,
+      headers: rawData.length > 0 ? rawData[0] : [],
+      data: rawData.slice(1) // exclude header
+    },
+    perdalin: {
+      rows: perdalinRows,
+      cols: perdalinCols,
+      headers: perdalinData.length > 0 ? perdalinData[0] : [],
+      data: perdalinData.slice(1) // exclude header
+    }
+  };
+}
+
+/**
+ * Memasukkan baris data tambahan ke sheet RAW dan memperbarui cermin PESERTA
+ */
+function syncSheetsData(additions) {
+  if (!additions || !Array.isArray(additions) || additions.length === 0) {
+    return { status: "success", message: "Tidak ada data tambahan untuk dimasukkan." };
+  }
+  
+  const ss = getSpreadsheet();
+  const rawSheet = getRegistrationSheet(ss);
+  
+  // Tulis data tambahan ke sheet RAW
+  for (let i = 0; i < additions.length; i++) {
+    rawSheet.appendRow(additions[i]);
+  }
+  
+  SpreadsheetApp.flush();
+  
+  // Re-sync sheet PESERTA dengan memicu penulisan ulang formula QUERY
+  resetSpreadsheetData();
+  
+  return {
+    status: "success",
+    message: additions.length + " data peserta baru dari PERDALIN berhasil ditambahkan ke sheet RAW secara bersih!"
   };
 }
