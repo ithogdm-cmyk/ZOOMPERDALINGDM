@@ -986,63 +986,107 @@ function getLeaderboard() {
 /**
  * Mengambil data sheet RAW dan sheet DATA DARI PERDALIN untuk perbandingan
  */
-function compareSheetsData() {
-  const ss = getSpreadsheet();
+/**
+ * Fungsi Mandiri untuk Sinkronisasi Data dari sheet 'COCOK DATA' ke sheet 'RAW'
+ * Buka Apps Script, pilih fungsi ini di dropdown atas, lalu klik RUN.
+ */
+function syncCocokData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
   const rawSheet = ss.getSheetByName(CONFIG.RAW_SHEET_NAME);
-  const perdalinSheet = ss.getSheetByName("COCOK DATA") || ss.getSheetByName("DATA DARI PERDALIN");
+  const cocokSheet = ss.getSheetByName("COCOK DATA");
   
-  if (!perdalinSheet) {
-    return { status: "error", message: "Sheet 'COCOK DATA' atau 'DATA DARI PERDALIN' tidak ditemukan." };
+  if (!rawSheet) {
+    Logger.log("Error: Sheet 'RAW' tidak ditemukan.");
+    return;
+  }
+  if (!cocokSheet) {
+    Logger.log("Error: Sheet 'COCOK DATA' tidak ditemukan.");
+    return;
   }
   
   const rawRows = rawSheet.getLastRow();
   const rawCols = rawSheet.getLastColumn();
   const rawData = rawRows > 0 ? rawSheet.getRange(1, 1, rawRows, rawCols).getValues() : [];
   
-  const perdalinRows = perdalinSheet.getLastRow();
-  const perdalinCols = perdalinSheet.getLastColumn();
-  const perdalinData = perdalinRows > 0 ? perdalinSheet.getRange(1, 1, perdalinRows, perdalinCols).getValues() : [];
+  const cocokRows = cocokSheet.getLastRow();
+  const cocokCols = cocokSheet.getLastColumn();
+  const cocokData = cocokRows > 0 ? cocokSheet.getRange(1, 1, cocokRows, cocokCols).getValues() : [];
   
-  return {
-    status: "success",
-    raw: {
-      rows: rawRows,
-      cols: rawCols,
-      headers: rawData.length > 0 ? rawData[0] : [],
-      data: rawData.slice(1) // exclude header
-    },
-    perdalin: {
-      rows: perdalinRows,
-      cols: perdalinCols,
-      headers: perdalinData.length > 0 ? perdalinData[0] : [],
-      data: perdalinData.slice(1) // exclude header
+  if (cocokData.length <= 1) {
+    Logger.log("Info: Sheet 'COCOK DATA' kosong atau hanya berisi header.");
+    return;
+  }
+  
+  // Indeks data RAW berdasarkan ID (Kolom A) dan Email (Kolom F)
+  const rawMap = new Map();
+  const rawEmails = new Set();
+  
+  for (let i = 1; i < rawData.length; i++) {
+    const row = rawData[i];
+    const id = String(row[0] || "").trim().toLowerCase();
+    const email = String(row[5] || "").trim().toLowerCase();
+    if (id) rawMap.set(id, i + 1);
+    if (email) rawEmails.add(email);
+  }
+  
+  const additions = [];
+  const perdalinIds = new Set();
+  
+  // Headers COCOK DATA:
+  // 0: NO, 1: KODE, 2: Nama Peserta, 3: NIK, 4: Email, 5: No. Whatsapp, 6: Asal Instansi, 7: Profesi
+  for (let i = 1; i < cocokData.length; i++) {
+    const row = cocokData[i];
+    const id = String(row[1] || "").trim().toLowerCase(); // KODE di index 1
+    const email = String(row[4] || "").trim().toLowerCase(); // Email di index 4
+    const name = String(row[2] || "").trim(); // Nama di index 2
+    
+    if (!id) continue;
+    
+    // Cek duplikat di dalam COCOK DATA sendiri
+    if (perdalinIds.has(id)) {
+      continue;
     }
-  };
-}
-
-/**
- * Memasukkan baris data tambahan ke sheet RAW dan memperbarui cermin PESERTA
- */
-function syncSheetsData(additions) {
-  if (!additions || !Array.isArray(additions) || additions.length === 0) {
-    return { status: "success", message: "Tidak ada data tambahan untuk dimasukkan." };
+    perdalinIds.add(id);
+    
+    // Cek apakah ID atau Email sudah ada di RAW
+    const inRawById = rawMap.has(id);
+    const inRawByEmail = email ? rawEmails.has(email) : false;
+    
+    if (!inRawById && !inRawByEmail && name && name !== "0" && name !== "0.0") {
+      // Petakan baris COCOK DATA ini ke dalam format kolom RAW (13 kolom)
+      const rawFormattedRow = [
+        row[1], // ID Peserta (KODE)
+        row[3], // NIK
+        row[2], // Nama Peserta
+        row[6], // Asal Instansi
+        row[5], // No Handphone (No. Whatsapp)
+        row[4], // Email akun LMS
+        "",     // Cabang
+        "",     // Nama PS
+        "",     // Divisi
+        row[7], // Profesi
+        "",     // Jabatan
+        "",     // Produk
+        "Peserta" // Tipe Registrasi
+      ];
+      additions.push(rawFormattedRow);
+    }
   }
   
-  const ss = getSpreadsheet();
-  const rawSheet = getRegistrationSheet(ss);
+  Logger.log("=== MEMULAI SINKRONISASI COCOK DATA ===");
+  Logger.log("Jumlah data baru yang ditemukan: " + additions.length);
   
-  // Tulis data tambahan ke sheet RAW
-  for (let i = 0; i < additions.length; i++) {
-    rawSheet.appendRow(additions[i]);
+  if (additions.length > 0) {
+    for (let i = 0; i < additions.length; i++) {
+      rawSheet.appendRow(additions[i]);
+      Logger.log("Menambahkan: [" + additions[i][0] + "] " + additions[i][2]);
+    }
+    SpreadsheetApp.flush();
+    
+    // Re-sync sheet cermin PESERTA dengan memicu penulisan ulang formula QUERY
+    resetSpreadsheetData();
+    Logger.log("✓ Sinkronisasi berhasil! " + additions.length + " data ditambahkan dan sheet PESERTA diperbarui.");
+  } else {
+    Logger.log("✓ Semua data di sheet 'COCOK DATA' sudah sesuai dan ada di sheet 'RAW'. Tidak ada data yang perlu ditambahkan.");
   }
-  
-  SpreadsheetApp.flush();
-  
-  // Re-sync sheet PESERTA dengan memicu penulisan ulang formula QUERY
-  resetSpreadsheetData();
-  
-  return {
-    status: "success",
-    message: additions.length + " data peserta baru dari PERDALIN berhasil ditambahkan ke sheet RAW secara bersih!"
-  };
 }
