@@ -989,10 +989,10 @@ function getLeaderboard() {
 function compareSheetsData() {
   const ss = getSpreadsheet();
   const rawSheet = ss.getSheetByName(CONFIG.RAW_SHEET_NAME);
-  const perdalinSheet = ss.getSheetByName("DATA DARI PERDALIN");
+  const perdalinSheet = ss.getSheetByName("COCOK DATA") || ss.getSheetByName("DATA DARI PERDALIN");
   
   if (!perdalinSheet) {
-    return { status: "error", message: "Sheet 'DATA DARI PERDALIN' tidak ditemukan." };
+    return { status: "error", message: "Sheet 'COCOK DATA' atau 'DATA DARI PERDALIN' tidak ditemukan." };
   }
   
   const rawRows = rawSheet.getLastRow();
