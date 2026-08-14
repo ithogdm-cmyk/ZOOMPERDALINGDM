@@ -1125,3 +1125,18 @@ function syncCocokData() {
   Logger.log("Total baris baru ditambahkan: " + newAppendCount);
   Logger.log("✓ Sinkronisasi selesai dengan sukses!");
 }
+
+/**
+ * Debugging untuk mencetak semua nama sheet dan nama kolomnya (headers)
+ */
+function printHeaders() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  for (let i = 0; i < sheets.length; i++) {
+    const sheet = sheets[i];
+    const name = sheet.getName();
+    const lastCol = sheet.getLastColumn();
+    const headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+    Logger.log("Sheet: '" + name + "' | Kolom: " + JSON.stringify(headers));
+  }
+}
