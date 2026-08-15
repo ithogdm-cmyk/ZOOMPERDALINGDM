@@ -13,15 +13,15 @@
        DESIGN SYSTEM & VARIABLES
        ========================================================================= */
     :root {
-      --primary: #10b981; /* Emerald Green */
-      --primary-hover: #059669;
-      --primary-light: rgba(16, 185, 129, 0.08);
+      --primary: #7c3aed; /* Violet/Purple */
+      --primary-hover: #6d28d9;
+      --primary-light: rgba(124, 58, 237, 0.08);
       --danger: #ef4444;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --bg-app: #f8fafc;
+      --text-main: #1e1b4b; /* Deep Navy/Indigo */
+      --text-muted: #7c7a90; /* Lavender Gray */
+      --bg-app: #f3ebf6; /* Ungu/Lavender Pastel sesuai contoh gambar */
       --bg-card: #ffffff;
-      --border-color: #e2e8f0;
+      --border-color: #e5def0;
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -581,6 +581,10 @@
             <span class="result-label">Total Waktu Jawab</span>
             <span id="res-time" class="result-value">- Detik</span>
           </div>
+          <div class="result-row">
+            <span class="result-label">Waktu Kirim</span>
+            <span id="res-timestamp" class="result-value">-</span>
+          </div>
         </div>
         
         <p class="subtitle" style="font-size: 0.85rem; margin-bottom: 0;">Peringkat tertinggi dengan waktu tercepat akan ditampilkan secara langsung pada papan proyektor panitia!</p>
@@ -922,6 +926,7 @@
           document.getElementById('res-name').textContent = res.name;
           document.getElementById('res-score').textContent = `${res.score} Poin`;
           document.getElementById('res-time').textContent = `${totalDuration} Detik`;
+          document.getElementById('res-timestamp').textContent = `${res.submitTime || '-'} WIB`;
           switchView('success');
         } else {
           // Tampilkan pesan error jika ditolak (misal: sudah berpartisipasi)

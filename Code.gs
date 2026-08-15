@@ -916,6 +916,7 @@ function submitQuiz(emailOrId, score, timeTaken) {
     status: "success",
     name: name,
     score: score,
+    submitTime: Utilities.formatDate(now, Session.getScriptTimeZone(), "HH:mm:ss"),
     message: "Skor kuis Anda berhasil disimpan!"
   };
 }
