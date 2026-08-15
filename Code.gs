@@ -1087,3 +1087,259 @@ function printHeaders() {
     Logger.log("Sheet: '" + name + "' | Kolom: " + JSON.stringify(headers));
   }
 }
+
+/**
+ * Membuat Laporan Kehadiran lengkap (Hadir & Tidak Hadir) di sheet baru bernama 'LAPORAN_KEHADIRAN'
+ * Silakan buka Apps Script, pilih fungsi ini di dropdown atas, lalu klik RUN.
+ */
+function generateAttendanceReport() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rawSheet = ss.getSheetByName(CONFIG.RAW_SHEET_NAME);
+  const attSheet = ss.getSheetByName(CONFIG.ATTENDANCE_SHEET_NAME);
+  
+  if (!rawSheet) {
+    Logger.log("Error: Sheet 'RAW' tidak ditemukan.");
+    return;
+  }
+  if (!attSheet) {
+    Logger.log("Error: Sheet 'Kehadiran' tidak ditemukan.");
+    return;
+  }
+  
+  // 1. Ambil data pendaftaran (RAW)
+  const rawRows = rawSheet.getLastRow();
+  const rawCols = rawSheet.getLastColumn();
+  const rawData = rawRows > 0 ? rawSheet.getRange(1, 1, rawRows, rawCols).getValues() : [];
+  
+  // 2. Ambil data kehadiran (Kehadiran)
+  const attRows = attSheet.getLastRow();
+  const attCols = attSheet.getLastColumn();
+  const attData = attRows > 0 ? attSheet.getRange(1, 1, attRows, attCols).getValues() : [];
+  
+  // 3. Petakan data kehadiran berdasarkan ID (Kolom A) dan Email (Kolom B)
+  const attendanceMap = {};
+  if (attRows >= 2) {
+    for (let i = 1; i < attData.length; i++) {
+      const row = attData[i];
+      const id = String(row[0] || "").trim().toLowerCase();
+      const email = String(row[1] || "").trim().toLowerCase();
+      const status = String(row[3] || "HADIR").trim();
+      const timestamp = row[4];
+      
+      let formattedTime = "";
+      if (timestamp instanceof Date) {
+        formattedTime = Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "dd MMM yyyy HH:mm:ss");
+      } else if (timestamp) {
+        formattedTime = String(timestamp);
+      }
+      
+      const record = { status: status, time: formattedTime, dateObj: timestamp instanceof Date ? timestamp : new Date(0) };
+      if (id) attendanceMap[id] = record;
+      if (email) attendanceMap[email] = record;
+    }
+  }
+  
+  // 4. Proses data pendaftaran dan tentukan status kehadiran
+  const presentRows = [];
+  const absentRows = [];
+  
+  if (rawData.length >= 2) {
+    for (let i = 1; i < rawData.length; i++) {
+      const row = rawData[i];
+      const id = String(row[0] || "").trim();
+      const name = String(row[2] || "").trim();
+      const email = String(row[5] || "").trim().toLowerCase();
+      const type = String(row[12] || "Peserta").trim();
+      
+      if (!name || name === "0" || name === "0.0") continue;
+      
+      // Cocokkan status kehadiran
+      const match = attendanceMap[id.toLowerCase()] || (email ? attendanceMap[email.toLowerCase()] : null);
+      
+      const reportRow = [
+        id,      // A: ID Peserta
+        row[1],  // B: NIK
+        row[2],  // C: Nama Peserta
+        row[3],  // D: Asal Instansi
+        row[4],  // E: No Handphone (No. Whatsapp)
+        row[5],  // F: Email akun LMS
+        row[6],  // G: Cabang
+        row[7],  // H: Nama PS
+        row[8],  // I: Divisi
+        row[9],  // J: Profesi
+        type,    // K: Tipe Registrasi
+        match ? "HADIR" : "TIDAK HADIR", // L: Status Kehadiran
+        match ? match.time : "-",        // M: Waktu Absen
+        match ? match.dateObj.getTime() : 0 // N: Epoch time untuk sorting helper
+      ];
+      
+      if (match) {
+        presentRows.push(reportRow);
+      } else {
+        absentRows.push(reportRow);
+      }
+    }
+  }
+  
+  // 5. Tambahkan peserta OTS yang tidak terdaftar di RAW tapi ada di Kehadiran
+  // (Sebagai pengaman jika ada data absen gantung)
+  Object.keys(attendanceMap).forEach(key => {
+    const isId = key.indexOf("gdm") === 0 || key.indexOf("ilc") === 0 || key.indexOf("ots") === 0;
+    if (!isId) return; // Hanya proses kunci ID
+    
+    // Cek apakah sudah ada di presentRows
+    const alreadyProcessed = presentRows.some(r => String(r[0]).trim().toLowerCase() === key);
+    if (!alreadyProcessed) {
+      const record = attendanceMap[key];
+      // Cari nama di data kehadiran
+      let name = "";
+      let email = "";
+      for (let i = 1; i < attData.length; i++) {
+        if (String(attData[i][0]).trim().toLowerCase() === key) {
+          name = attData[i][2];
+          email = attData[i][1];
+          break;
+        }
+      }
+      
+      const otsRow = [
+        key.toUpperCase(), // A: ID Peserta
+        "",                // B: NIK
+        name,              // C: Nama Peserta
+        "",                // D: Asal Instansi
+        "",                // E: No Handphone
+        email,             // F: Email
+        "",                // G: Cabang
+        "",                // H: Nama PS
+        "",                // I: Divisi
+        "",                // J: Profesi
+        "OTS",             // K: Tipe Registrasi
+        "HADIR",           // L: Status Kehadiran
+        record.time,       // M: Waktu Absen
+        record.dateObj.getTime() // N: Sorting helper
+      ];
+      presentRows.push(otsRow);
+    }
+  });
+  
+  // 6. Sorting
+  // - Hadir: Diurutkan berdasarkan Waktu Absen Terawal (chronological)
+  presentRows.sort((a, b) => a[13] - b[13]);
+  // - Tidak Hadir: Diurutkan berdasarkan ID Peserta
+  absentRows.sort((a, b) => String(a[0]).localeCompare(String(b[0]), undefined, { numeric: true }));
+  
+  // Gabungkan seluruh data laporan
+  const finalReportRows = [];
+  let noIndex = 1;
+  
+  // Masukkan data Hadir
+  for (let i = 0; i < presentRows.length; i++) {
+    const row = presentRows[i];
+    finalReportRows.push([noIndex++].concat(row.slice(0, 13)));
+  }
+  
+  // Masukkan data Tidak Hadir
+  for (let i = 0; i < absentRows.length; i++) {
+    const row = absentRows[i];
+    finalReportRows.push([noIndex++].concat(row.slice(0, 13)));
+  }
+  
+  // 7. Tulis ke sheet baru LAPORAN_KEHADIRAN
+  const reportSheetName = "LAPORAN_KEHADIRAN";
+  let reportSheet = ss.getSheetByName(reportSheetName);
+  if (reportSheet) {
+    // Sembunyikan konfirmasi penghapusan agar tidak interaktif
+    ss.deleteSheet(reportSheet);
+  }
+  reportSheet = ss.insertSheet(reportSheetName);
+  
+  const headers = [
+    "No",
+    "ID Peserta",
+    "NIK",
+    "Nama Peserta",
+    "Asal Instansi",
+    "No Handphone",
+    "Email",
+    "Cabang",
+    "Nama PS",
+    "Divisi",
+    "Profesi",
+    "Tipe Registrasi",
+    "Status Kehadiran",
+    "Waktu Absen"
+  ];
+  
+  // Tulis Header
+  reportSheet.appendRow(headers);
+  
+  // Tulis Data secara massal (bulk write)
+  if (finalReportRows.length > 0) {
+    reportSheet.getRange(2, 1, finalReportRows.length, headers.length).setValues(finalReportRows);
+  }
+  
+  // 8. Terapkan Desain Format Excel Mewah (Zebra Striping & Styling)
+  const lastReportRow = reportSheet.getLastRow();
+  const lastReportCol = headers.length;
+  
+  // Bekukan baris pertama
+  reportSheet.setFrozenRows(1);
+  
+  // Gaya Header Row (Warna Indigo, teks putih tebal, rata tengah)
+  const headerRange = reportSheet.getRange(1, 1, 1, lastReportCol);
+  headerRange.setBackground("#4f46e5")
+             .setFontColor("#ffffff")
+             .setFontWeight("bold")
+             .setHorizontalAlignment("center")
+             .setVerticalAlignment("middle");
+             
+  reportSheet.setRowHeight(1, 28);
+  
+  if (lastReportRow >= 2) {
+    // Rata tengah kolom No, ID, NIK, Tipe, Status, Waktu Absen
+    reportSheet.getRange(2, 1, lastReportRow - 1, 1).setHorizontalAlignment("center"); // No
+    reportSheet.getRange(2, 2, lastReportRow - 1, 1).setHorizontalAlignment("center"); // ID
+    reportSheet.getRange(2, 3, lastReportRow - 1, 1).setHorizontalAlignment("center"); // NIK
+    reportSheet.getRange(2, 12, lastReportRow - 1, 3).setHorizontalAlignment("center"); // Tipe, Status, Waktu
+    
+    // Zebra striping untuk baris data
+    for (let r = 2; r <= lastReportRow; r++) {
+      reportSheet.setRowHeight(r, 22);
+      const rowRange = reportSheet.getRange(r, 1, 1, lastReportCol);
+      const statusValue = reportSheet.getRange(r, 13).getValue();
+      
+      // Warna spesifik untuk status kehadiran
+      const statusCell = reportSheet.getRange(r, 13);
+      if (statusValue === "HADIR") {
+        statusCell.setBackground("#d1fae5").setFontColor("#065f46").setFontWeight("bold");
+      } else {
+        statusCell.setBackground("#fee2e2").setFontColor("#991b1b").setFontWeight("bold");
+      }
+      
+      // Zebra striping (baris genap ungu/lavender sangat muda)
+      if (r % 2 === 0) {
+        rowRange.setBackground("#faf5ff");
+      } else {
+        rowRange.setBackground("#ffffff");
+      }
+    }
+    
+    // Batas border tipis abu-abu untuk seluruh sel data
+    const fullTableRange = reportSheet.getRange(1, 1, lastReportRow, lastReportCol);
+    fullTableRange.setBorder(true, true, true, true, true, true, "#cbd5e1", SpreadsheetApp.BorderStyle.SOLID);
+  }
+  
+  // Auto-resize lebar kolom dengan padding tambahan agar estetik
+  for (let c = 1; c <= lastReportCol; c++) {
+    reportSheet.autoResizeColumn(c);
+    const currentWidth = reportSheet.getColumnWidth(c);
+    reportSheet.setColumnWidth(c, currentWidth + 20);
+  }
+  
+  SpreadsheetApp.flush();
+  
+  Logger.log("=== LAPORAN KEHADIRAN BERHASIL DIBUAT ===");
+  Logger.log("Jumlah Hadir: " + presentRows.length);
+  Logger.log("Jumlah Tidak Hadir: " + absentRows.length);
+  Logger.log("✓ Sheet 'LAPORAN_KEHADIRAN' telah berhasil dibuat dengan format Excel premium.");
+}
