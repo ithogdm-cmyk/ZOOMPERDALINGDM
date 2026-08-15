@@ -1057,8 +1057,11 @@ function syncCocokData() {
     rawSheet.getRange(2, 1, newRows.length, 13).setValues(newRows);
     SpreadsheetApp.flush();
     
-    // Re-sync sheet cermin PESERTA dengan memicu penulisan ulang formula QUERY
-    resetSpreadsheetData();
+    // Re-sync sheet cermin PESERTA secara aman tanpa menyentuh data absensi atau kuis
+    let pesSheet = ss.getSheetByName(CONFIG.PESERTA_SHEET_NAME);
+    if (pesSheet) {
+      pesSheet.getRange(1, 1).setValue('=QUERY(RAW!A:M; "SELECT A, C, F, M WHERE A IS NOT NULL"; 1)');
+    }
     Logger.log("✓ Sukses melakukan rebuild! Sheet RAW dan cermin PESERTA telah diperbarui secara bersih.");
   } else {
     Logger.log("Info: Tidak ada data peserta valid untuk dimasukkan.");
