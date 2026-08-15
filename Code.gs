@@ -973,7 +973,8 @@ function getLeaderboard() {
       id: p.id,
       name: p.name,
       score: p.score,
-      timeTaken: p.timeTaken
+      timeTaken: p.timeTaken,
+      submitTime: Utilities.formatDate(new Date(p.timestamp), Session.getScriptTimeZone(), "HH:mm:ss")
     });
   }
   

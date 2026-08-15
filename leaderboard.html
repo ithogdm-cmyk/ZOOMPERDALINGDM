@@ -383,7 +383,7 @@
         <div class="col-id">ID</div>
         <div class="col-name" style="text-align:left;">Nama Peserta</div>
         <div class="col-score">Skor</div>
-        <div class="col-time">Waktu</div>
+        <div class="col-time">Waktu / Kirim</div>
       </div>
       <div id="table-rows">
         <!-- Rows will be injected here -->
@@ -469,7 +469,7 @@
         document.getElementById('p1-name').textContent = top3.p1.name;
         document.getElementById('p1-id').textContent = top3.p1.id;
         document.getElementById('p1-score').textContent = top3.p1.score;
-        document.getElementById('p1-time').textContent = `${top3.p1.timeTaken}s`;
+        document.getElementById('p1-time').textContent = `${top3.p1.timeTaken}s (${top3.p1.submitTime})`;
         document.querySelector('.rank-1').style.visibility = 'visible';
       } else {
         document.querySelector('.rank-1').style.visibility = 'hidden';
@@ -480,7 +480,7 @@
         document.getElementById('p2-name').textContent = top3.p2.name;
         document.getElementById('p2-id').textContent = top3.p2.id;
         document.getElementById('p2-score').textContent = top3.p2.score;
-        document.getElementById('p2-time').textContent = `${top3.p2.timeTaken}s`;
+        document.getElementById('p2-time').textContent = `${top3.p2.timeTaken}s (${top3.p2.submitTime})`;
         document.querySelector('.rank-2').style.visibility = 'visible';
       } else {
         document.querySelector('.rank-2').style.visibility = 'hidden';
@@ -491,7 +491,7 @@
         document.getElementById('p3-name').textContent = top3.p3.name;
         document.getElementById('p3-id').textContent = top3.p3.id;
         document.getElementById('p3-score').textContent = top3.p3.score;
-        document.getElementById('p3-time').textContent = `${top3.p3.timeTaken}s`;
+        document.getElementById('p3-time').textContent = `${top3.p3.timeTaken}s (${top3.p3.submitTime})`;
         document.querySelector('.rank-3').style.visibility = 'visible';
       } else {
         document.querySelector('.rank-3').style.visibility = 'hidden';
@@ -512,7 +512,7 @@
             <div class="col-id">${p.id}</div>
             <div class="col-name" style="text-align:left;">${p.name}</div>
             <div class="col-score">${p.score}</div>
-            <div class="col-time">${p.timeTaken}s</div>
+            <div class="col-time">${p.timeTaken}s <span style="font-size:0.75rem; opacity:0.7; display:block;">${p.submitTime}</span></div>
           `;
           tableRows.appendChild(row);
         });
