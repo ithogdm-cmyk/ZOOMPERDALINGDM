@@ -808,6 +808,7 @@
                 <th style="width: 60px; text-align: center;">No</th>
                 <th style="width: 100px;">ID</th>
                 <th>Nama Lengkap</th>
+                <th>Instansi</th>
                 <th>Email</th>
                 <th>Tipe Daftar</th>
                 <th>Waktu Absen</th>
@@ -995,6 +996,7 @@
             id: p.id || '-',
             name: p.name,
             email: p.email,
+            institution: p.institution || '-',
             type: p.type === 'OTS' ? 'OTS' : 'Reguler',
             time: p.time || '-',
             status: p.type === 'OTS' ? 'HADIR (OTS)' : 'HADIR'
@@ -1005,6 +1007,7 @@
             id: p.id || '-',
             name: p.name,
             email: p.email,
+            institution: p.institution || '-',
             type: p.type === 'OTS' ? 'OTS' : 'Reguler',
             time: '-',
             status: 'BELUM HADIR'
@@ -1053,7 +1056,8 @@
         const filteredTable = allParticipantsMerged.filter(p => {
           const matchQuery = p.name.toLowerCase().includes(query) || 
                              p.email.toLowerCase().includes(query) ||
-                             (p.id && p.id.toLowerCase().includes(query));
+                             (p.id && p.id.toLowerCase().includes(query)) ||
+                             (p.institution && p.institution.toLowerCase().includes(query));
                              
           let matchStatus = true;
           if (statusVal === 'hadir') {
@@ -1098,7 +1102,7 @@
           row.innerHTML = `
             <div class="part-info">
               <span class="part-name">${p.name}${otsTag}</span>
-              <span class="part-email">${p.id ? `[${p.id}] ` : ''}${p.email}</span>
+              <span class="part-email">${p.id ? `[${p.id}] ` : ''}${p.email} • <span style="color: #6366f1; font-weight: 500;">${p.institution || '-'}</span></span>
             </div>
             <span class="time-badge">${cleanTime}</span>
           `;
@@ -1116,7 +1120,7 @@
           row.innerHTML = `
             <div class="part-info">
               <span class="part-name" style="color: var(--text-main); font-weight: 500;">${p.name}</span>
-              <span class="part-email">${p.id ? `[${p.id}] ` : ''}${p.email}</span>
+              <span class="part-email">${p.id ? `[${p.id}] ` : ''}${p.email} • <span style="color: var(--text-light);">${p.institution || '-'}</span></span>
             </div>
             <span class="status-absent-label">Belum Join</span>
           `;
@@ -1157,6 +1161,7 @@
           <td style="text-align: center; color: var(--text-light);">${index + 1}</td>
           <td style="font-weight: 600; color: #4f46e5; font-size: 0.8125rem;">${p.id}</td>
           <td style="font-weight: 500;">${p.name}</td>
+          <td style="color: var(--text-light); font-size: 0.85rem; font-style: italic;">${p.institution || '-'}</td>
           <td style="color: var(--text-light);">${p.email}</td>
           <td>${typeBadge}</td>
           <td style="color: var(--text-light); font-size: 0.8rem;">${p.time}</td>

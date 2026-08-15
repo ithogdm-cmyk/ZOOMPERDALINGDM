@@ -571,9 +571,9 @@ function getDashboardData() {
   const ss = getSpreadsheet();
   const tSS = new Date().getTime();
   
-  // 1. Ambil data pendaftaran (PESERTA - 4 kolom)
-  const pesSheet = getPesertaSheet(ss);
-  const allRegData = pesSheet.getDataRange().getValues();
+  // 1. Ambil data pendaftaran (RAW - 13 kolom untuk mendapatkan Instansi)
+  const rawSheet = ss.getSheetByName(CONFIG.RAW_SHEET_NAME);
+  const allRegData = rawSheet.getDataRange().getValues();
   const regLastRow = allRegData.length;
   const tRegInfo = new Date().getTime();
   
@@ -582,9 +582,10 @@ function getDashboardData() {
     for (let i = 1; i < regLastRow; i++) {
       const row = allRegData[i];
       const id = String(row[0] || "").trim();
-      const name = String(row[1] || "").trim();
-      const email = String(row[2] || "").trim().toLowerCase();
-      const statusType = String(row[3] || "REGULER").trim();
+      const name = String(row[2] || "").trim();
+      const email = String(row[5] || "").trim().toLowerCase();
+      const institution = String(row[3] || "").trim();
+      const statusType = String(row[12] || "Peserta").trim();
       
       // Cukup ada ID ATAU Email yang terisi, serta nama valid, maka dianggap peserta sah
       if ((id || email) && name && name !== "0" && name !== "0.0") {
@@ -592,6 +593,7 @@ function getDashboardData() {
           id: id,
           email: email,
           name: name,
+          institution: institution,
           type: statusType
         });
       }
@@ -672,6 +674,7 @@ function getDashboardData() {
         id: reg.id,
         email: reg.email,
         name: reg.name,
+        institution: reg.institution,
         type: reg.type,
         time: attendanceMap[reg.id].time,
         status: attendanceMap[reg.id].status
@@ -682,6 +685,7 @@ function getDashboardData() {
         id: reg.id,
         email: reg.email,
         name: reg.name,
+        institution: reg.institution,
         type: reg.type
       });
     }
