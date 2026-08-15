@@ -705,7 +705,7 @@ function getDashboardData() {
   });
   
   presentList.sort((a, b) => new Date(b.time) - new Date(a.time));
-  absentList.sort((a, b) => a.name.localeCompare(b.name));
+  absentList.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
   
   const totalRegistered = registrants.length;
   const totalPresent = presentList.length;
